@@ -29,6 +29,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.DocumentScanner
 import crystaldigits.freeprint.otg.print.effectiveMarginMm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -196,7 +197,7 @@ private enum class PrinterStatusType {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PrintScreen(vm: PrintViewModel) {
+fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) vm.replaceFiles(uris)
     }
@@ -307,10 +308,12 @@ fun PrintScreen(vm: PrintViewModel) {
                 label = "doc_workspace"
             ) { hasDoc ->
                 if (!hasDoc) {
-                    EmptyDocumentHero(
-                        onChooseFile = { picker.launch(arrayOf("application/pdf", "image/*")) },
-                        onLoadSample = vm::openSample
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        EmptyDocumentHero(
+                            onChooseFile = { picker.launch(arrayOf("application/pdf", "image/*")) }
+                        )
+                        ScanCard(onOpenScan)
+                    }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         DocumentPreviewSection(
@@ -569,11 +572,63 @@ private fun PrinterStatusCard(
     }
 }
 
+/** Start-screen card that opens the scanner, matching the "Ready to print" card above it. */
+@Composable
+private fun ScanCard(onOpenScan: () -> Unit) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.app_scanner_hero),
+                contentDescription = stringResource(R.string.scan_card_title),
+                modifier = Modifier
+                    .size(130.dp)
+                    .clip(RoundedCornerShape(18.dp))
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    stringResource(R.string.scan_card_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    stringResource(R.string.scan_card_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Button(
+                onClick = onOpenScan,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(vertical = 12.dp)
+            ) {
+                Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.scan_card_button), fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
 /** Inviting empty state hero card with soft hover shadow */
 @Composable
 private fun EmptyDocumentHero(
-    onChooseFile: () -> Unit,
-    onLoadSample: () -> Unit
+    onChooseFile: () -> Unit
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -647,16 +702,6 @@ private fun EmptyDocumentHero(
                     Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.select_document), fontWeight = FontWeight.SemiBold)
-                }
-
-                OutlinedButton(
-                    onClick = onLoadSample,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.load_sample))
                 }
             }
         }
@@ -1507,6 +1552,9 @@ private fun DiagnosticsBottomSheet(
                 }
                 OutlinedButton(onClick = vm::printTestPage, shape = RoundedCornerShape(8.dp)) {
                     Text(stringResource(R.string.diag_test))
+                }
+                OutlinedButton(onClick = vm::scannerProbe, shape = RoundedCornerShape(8.dp)) {
+                    Text(stringResource(R.string.diag_scan_probe))
                 }
                 OutlinedButton(onClick = vm::openSample, shape = RoundedCornerShape(8.dp)) {
                     Text(stringResource(R.string.diag_sample))
