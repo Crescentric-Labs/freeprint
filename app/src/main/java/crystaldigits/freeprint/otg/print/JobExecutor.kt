@@ -27,7 +27,7 @@ object JobExecutor {
                 else JobState.Failed("The printer rejected the job.\n$reply")
             }
         } catch (e: Exception) {
-            return JobState.Failed("Printing failed: ${e.message}")
+            return JobState.Failed(e.message ?: e.toString())
         } finally {
             conn.close()
         }
