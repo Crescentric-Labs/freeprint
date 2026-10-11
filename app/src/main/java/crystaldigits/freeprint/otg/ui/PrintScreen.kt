@@ -1,5 +1,12 @@
 package crystaldigits.freeprint.otg.ui
 
+import androidx.annotation.StringRes
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import crystaldigits.freeprint.otg.AppLocale
+import crystaldigits.freeprint.otg.AppLocale.findActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -155,6 +162,7 @@ fun PrintScreen(vm: PrintViewModel) {
         if (uri != null) vm.open(uri)
     }
     var showDiagnosticsSheet by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -166,18 +174,18 @@ fun PrintScreen(vm: PrintViewModel) {
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.app_icon),
-                            contentDescription = "App Icon",
+                            contentDescription = stringResource(R.string.cd_app_icon),
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(8.dp))
                         )
                         Column {
                             Text(
-                                "Free Print",
+                                stringResource(R.string.app_name),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
-                                "USB Mobile Direct Print",
+                                stringResource(R.string.app_subtitle),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -185,11 +193,14 @@ fun PrintScreen(vm: PrintViewModel) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showLanguageDialog = true }) {
+                        Icon(Icons.Default.Language, contentDescription = stringResource(R.string.cd_language))
+                    }
                     IconButton(onClick = vm::refreshPrinter) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Rescan Printer")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_rescan))
                     }
                     IconButton(onClick = { showDiagnosticsSheet = true }) {
-                        Icon(Icons.Default.BugReport, contentDescription = "Diagnostics")
+                        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.cd_diagnostics))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -233,6 +244,8 @@ fun PrintScreen(vm: PrintViewModel) {
 
             Spacer(Modifier.height(48.dp))
         }
+
+        if (showLanguageDialog) LanguageDialog { showLanguageDialog = false }
 
         if (showDiagnosticsSheet) {
             DiagnosticsBottomSheet(
@@ -279,12 +292,12 @@ private fun PrinterStatusCard(vm: PrintViewModel) {
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "No USB Printer Connected",
+                            stringResource(R.string.printer_none_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            "Plug in your USB OTG adapter and turn on the printer.",
+                            stringResource(R.string.printer_none_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -294,7 +307,7 @@ private fun PrinterStatusCard(vm: PrintViewModel) {
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Scan", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.scan), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -329,7 +342,7 @@ private fun PrinterStatusCard(vm: PrintViewModel) {
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                "USB permission needed to communicate with printer.",
+                                stringResource(R.string.printer_permission_needed),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -344,7 +357,7 @@ private fun PrinterStatusCard(vm: PrintViewModel) {
                     ) {
                         Icon(Icons.Default.Usb, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Grant USB Permission")
+                        Text(stringResource(R.string.grant_permission))
                     }
                 }
             }
@@ -393,20 +406,20 @@ private fun PrinterStatusCard(vm: PrintViewModel) {
                                 contentColor = MaterialTheme.colorScheme.onPrimary
                             ) {
                                 Text(
-                                    "Ready",
+                                    stringResource(R.string.ready),
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
                         Text(
-                            "USB OTG • Driverless IPP (600 DPI)",
+                            stringResource(R.string.printer_mode),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     IconButton(onClick = vm::refreshPrinter) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = MaterialTheme.colorScheme.primary)
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_refresh), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -435,7 +448,7 @@ private fun EmptyDocumentHero(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.app_printer_hero),
-                contentDescription = "Printer Hero",
+                contentDescription = stringResource(R.string.cd_printer_hero),
                 modifier = Modifier
                     .size(130.dp)
                     .clip(RoundedCornerShape(18.dp))
@@ -446,12 +459,12 @@ private fun EmptyDocumentHero(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "Ready to Print",
+                    stringResource(R.string.hero_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    "Select any PDF or image to configure options and print directly to your USB printer.",
+                    stringResource(R.string.hero_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -491,7 +504,7 @@ private fun EmptyDocumentHero(
                 ) {
                     Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Select Document or Image", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.select_document), fontWeight = FontWeight.SemiBold)
                 }
 
                 OutlinedButton(
@@ -501,7 +514,7 @@ private fun EmptyDocumentHero(
                 ) {
                     Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Load Sample Multi-Page PDF")
+                    Text(stringResource(R.string.load_sample))
                 }
             }
         }
@@ -556,18 +569,18 @@ private fun DocumentPreviewSection(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "${doc.pageCount} ${if (doc.pageCount == 1) "page" else "pages"} • ${doc.mime ?: "Document"}",
+                        stringResource(R.string.doc_meta, pluralStringResource(R.plurals.pages_count, doc.pageCount, doc.pageCount), doc.mime ?: stringResource(R.string.doc_fallback)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 TextButton(onClick = onChangeFile) {
-                    Text("Change")
+                    Text(stringResource(R.string.change))
                 }
 
                 IconButton(onClick = onClearFile, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = "Clear file", modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_file), modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -590,7 +603,7 @@ private fun DocumentPreviewSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "Live Print Preview",
+                        stringResource(R.string.preview_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -599,7 +612,7 @@ private fun DocumentPreviewSection(
                         color = if (vm.options.color) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant
                     ) {
                         Text(
-                            if (vm.options.color) "Color" else "Grayscale",
+                            stringResource(if (vm.options.color) R.string.mode_colour else R.string.mode_grayscale),
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
@@ -635,7 +648,7 @@ private fun DocumentPreviewSection(
                         if (bmp != null) {
                             Image(
                                 bitmap = bmp.asImageBitmap(),
-                                contentDescription = "Live Sheet Preview",
+                                contentDescription = stringResource(R.string.cd_sheet_preview),
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Fit,
                                 colorFilter = bw
@@ -649,7 +662,7 @@ private fun DocumentPreviewSection(
                         if (bmp != null) {
                             Icon(
                                 Icons.Default.Fullscreen,
-                                contentDescription = "Full screen",
+                                contentDescription = stringResource(R.string.cd_fullscreen),
                                 tint = Color.White,
                                 modifier = Modifier
                                     .align(Alignment.BottomEnd)
@@ -673,7 +686,7 @@ private fun DocumentPreviewSection(
                         onClick = { vm.setPage(vm.pageIndex - 1) },
                         enabled = vm.pageIndex > 0
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous sheet")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet))
                     }
 
                     Surface(
@@ -681,7 +694,7 @@ private fun DocumentPreviewSection(
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                     ) {
                         Text(
-                            "Sheet ${vm.pageIndex + 1} of $sheets",
+                            stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -692,18 +705,18 @@ private fun DocumentPreviewSection(
                         onClick = { vm.setPage(vm.pageIndex + 1) },
                         enabled = vm.pageIndex < sheets - 1
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next sheet")
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet))
                     }
                 }
 
                 Text(
-                    "Tap the sheet to enlarge. Swipe to change sheet.",
+                    stringResource(R.string.preview_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    "${vm.selectedCount} of ${doc.pageCount} page(s) selected • ${sheets} sheet(s) will be printed",
+                    stringResource(R.string.selection_summary, vm.selectedCount, doc.pageCount, pluralStringResource(R.plurals.sheets_count, sheets, sheets)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -721,47 +734,56 @@ private fun DocumentPreviewSection(
 }
 
 /** One tappable settings row per option group. The row shows the group name and its current value. */
-private enum class Setting(val title: String, val icon: ImageVector) {
-    PAPER("Paper size", Icons.Default.Description),
-    COLOUR("Colour", Icons.Default.Palette),
-    QUALITY("Print quality", Icons.Default.HighQuality),
-    ORIENTATION("Orientation", Icons.Default.ScreenRotation),
-    PAGES("Pages to print", Icons.Default.FormatListNumbered),
-    PER_SHEET("Pages per sheet", Icons.Default.GridView),
-    SIZING("Page size and scale", Icons.Default.FitScreen),
-    POSITION("Position", Icons.Default.OpenWith),
+private enum class Setting(@StringRes val titleRes: Int, val icon: ImageVector) {
+    PAPER(R.string.setting_paper, Icons.Default.Description),
+    COLOUR(R.string.setting_colour, Icons.Default.Palette),
+    QUALITY(R.string.setting_quality, Icons.Default.HighQuality),
+    ORIENTATION(R.string.setting_orientation, Icons.Default.ScreenRotation),
+    PAGES(R.string.setting_pages, Icons.Default.FormatListNumbered),
+    PER_SHEET(R.string.setting_per_sheet, Icons.Default.GridView),
+    SIZING(R.string.setting_sizing, Icons.Default.FitScreen),
+    POSITION(R.string.setting_position, Icons.Default.OpenWith),
 }
 
 /** The current value of [setting], shown as the row's subtitle. */
+@Composable
 private fun subtitle(vm: PrintViewModel, setting: Setting): String {
     val o = vm.options
     val total = vm.doc?.pageCount ?: 0
     return when (setting) {
         Setting.PAPER -> o.paper.label
-        Setting.COLOUR -> if (o.color) "Colour" else "Grayscale"
-        Setting.QUALITY -> o.quality.label
-        Setting.ORIENTATION -> o.orientation.label
+        Setting.COLOUR -> stringResource(if (o.color) R.string.mode_colour else R.string.mode_grayscale)
+        Setting.QUALITY -> stringResource(o.quality.labelRes)
+        Setting.ORIENTATION -> stringResource(o.orientation.labelRes)
         Setting.PAGES -> when (val sel = vm.selection) {
-            is PageSelection.Invalid -> "Check the page range"
-            is PageSelection.Pages ->
-                if (vm.rangeText.isBlank() && vm.parity == Parity.ALL) "All pages ($total)"
-                else buildString {
-                    append(vm.rangeText.trim().ifBlank { "All pages" })
-                    if (vm.parity != Parity.ALL) append(", ${vm.parity.label.lowercase()} only")
-                    append(" (${sel.indices.size} of $total)")
+            is PageSelection.Invalid -> stringResource(R.string.sub_check_range)
+            is PageSelection.Pages -> {
+                val n = sel.indices.size
+                val range = vm.rangeText.trim()
+                when {
+                    range.isEmpty() && vm.parity == Parity.ALL -> stringResource(R.string.sub_all_pages_n, total)
+                    vm.parity == Parity.ALL -> stringResource(R.string.sub_pages_range, range, n, total)
+                    else -> stringResource(
+                        R.string.sub_pages_range_parity,
+                        range.ifEmpty { stringResource(R.string.sub_all_pages) },
+                        stringResource(if (vm.parity == Parity.ODD) R.string.parity_only_odd else R.string.parity_only_even),
+                        n, total,
+                    )
                 }
+            }
         }
         Setting.PER_SHEET ->
-            if (o.perSheet == PerSheet.ONE) "1 per sheet"
-            else "${o.perSheet.n} per sheet, ${o.order.label.lowercase()}${if (o.border) ", with borders" else ""}"
-        Setting.SIZING -> "${o.fit.label}, ${o.scalePercent}%"
+            if (o.perSheet == PerSheet.ONE) stringResource(R.string.sub_per_sheet_one)
+            else stringResource(R.string.sub_per_sheet_n, o.perSheet.n, stringResource(o.order.labelRes)) +
+                if (o.border) ", " + stringResource(R.string.sub_with_borders) else ""
+        Setting.SIZING -> stringResource(R.string.sub_sizing, stringResource(o.fit.labelRes), o.scalePercent)
         Setting.POSITION ->
-            if (o.anchor == Anchor.CENTER && o.offsetXmm == 0 && o.offsetYmm == 0) "Centre"
-            else buildString {
-                append(o.anchor.label)
-                if (o.offsetXmm != 0) append(", ${o.offsetXmm} mm across")
-                if (o.offsetYmm != 0) append(", ${o.offsetYmm} mm down")
-            }
+            if (o.anchor == Anchor.CENTER && o.offsetXmm == 0 && o.offsetYmm == 0) stringResource(R.string.sub_pos_centre)
+            else listOfNotNull(
+                stringResource(o.anchor.labelRes),
+                if (o.offsetXmm != 0) stringResource(R.string.sub_across, o.offsetXmm) else null,
+                if (o.offsetYmm != 0) stringResource(R.string.sub_down, o.offsetYmm) else null,
+            ).joinToString(", ")
     }
 }
 
@@ -777,7 +799,7 @@ private fun SettingsCard(vm: PrintViewModel) {
     ) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Text(
-                "Print settings",
+                stringResource(R.string.print_settings),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
@@ -804,7 +826,7 @@ private fun SettingRow(setting: Setting, value: String, onClick: () -> Unit) {
     ) {
         Icon(setting.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Column(Modifier.weight(1f)) {
-            Text(setting.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(setting.titleRes), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
             Text(
                 value,
                 style = MaterialTheme.typography.bodySmall,
@@ -826,7 +848,7 @@ private fun SettingRow(setting: Setting, value: String, onClick: () -> Unit) {
 private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(setting.title) },
+        title = { Text(stringResource(setting.titleRes)) },
         text = {
             val o = vm.options
             Column(
@@ -838,20 +860,20 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
                         vm.updateOptions(o.copy(paper = it)); onDismiss()
                     }
 
-                    Setting.COLOUR -> RadioList(listOf(true, false), o.color, { if (it) "Colour" else "Grayscale (black and white)" }) {
+                    Setting.COLOUR -> RadioList(listOf(true, false), o.color, { stringResource(if (it) R.string.colour_opt_colour else R.string.colour_opt_gray) }) {
                         vm.updateOptions(o.copy(color = it)); onDismiss()
                     }
 
-                    Setting.QUALITY -> RadioList(Quality.entries, o.quality, { it.label }) {
+                    Setting.QUALITY -> RadioList(Quality.entries, o.quality, { stringResource(it.labelRes) }) {
                         vm.updateOptions(o.copy(quality = it)); onDismiss()
                     }
 
                     Setting.ORIENTATION -> {
-                        RadioList(Orientation.entries, o.orientation, { it.label }) {
+                        RadioList(Orientation.entries, o.orientation, { stringResource(it.labelRes) }) {
                             vm.updateOptions(o.copy(orientation = it)); onDismiss()
                         }
                         Text(
-                            "Auto follows the first page. Landscape turns the content a quarter turn counter-clockwise.",
+                            stringResource(R.string.orientation_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -860,19 +882,19 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
                     Setting.PAGES -> PagesToPrintControls(vm)
 
                     Setting.PER_SHEET -> {
-                        RadioList(PerSheet.entries, o.perSheet, { if (it == PerSheet.ONE) "1 page per sheet" else "${it.n} pages per sheet" }) {
+                        RadioList(PerSheet.entries, o.perSheet, { if (it == PerSheet.ONE) stringResource(R.string.per_sheet_one_opt) else stringResource(R.string.per_sheet_n_opt, it.n) }) {
                             vm.updateOptions(o.copy(perSheet = it))
                         }
                         if (o.perSheet != PerSheet.ONE) {
                             HorizontalDivider()
-                            Text("Page order", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                            RadioList(PageOrder.entries, o.order, { it.label }) { vm.updateOptions(o.copy(order = it)) }
+                            Text(stringResource(R.string.page_order), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                            RadioList(PageOrder.entries, o.order, { stringResource(it.labelRes) }) { vm.updateOptions(o.copy(order = it)) }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Border around each page", style = MaterialTheme.typography.bodyMedium)
+                                Text(stringResource(R.string.border_each), style = MaterialTheme.typography.bodyMedium)
                                 Switch(checked = o.border, onCheckedChange = { vm.updateOptions(o.copy(border = it)) })
                             }
                         }
@@ -883,13 +905,13 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_done)) } }
     )
 }
 
 /** Single-choice list: tapping a row picks it. */
 @Composable
-private fun <T> RadioList(items: List<T>, selected: T, label: (T) -> String, onPick: (T) -> Unit) {
+private fun <T> RadioList(items: List<T>, selected: T, label: @Composable (T) -> String, onPick: (T) -> Unit) {
     Column {
         items.forEach { item ->
             Row(
@@ -911,19 +933,19 @@ private fun <T> RadioList(items: List<T>, selected: T, label: (T) -> String, onP
 private fun PagesToPrintControls(vm: PrintViewModel) {
     val sel = vm.selection
     val total = vm.doc?.pageCount ?: 0
-    FriendlyChipGroup("Which pages", Parity.entries, vm.parity, { it.label }) { vm.updateParity(it) }
+    FriendlyChipGroup(stringResource(R.string.pages_which), Parity.entries, vm.parity, { stringResource(it.labelRes) }) { vm.updateParity(it) }
     OutlinedTextField(
         value = vm.rangeText,
         onValueChange = vm::setRange,
-        label = { Text("Page range (blank = all)") },
-        placeholder = { Text("e.g. 1-3, 5, 8-") },
+        label = { Text(stringResource(R.string.page_range_label)) },
+        placeholder = { Text(stringResource(R.string.page_range_placeholder)) },
         singleLine = true,
         isError = sel is PageSelection.Invalid,
         supportingText = {
             Text(
                 when (sel) {
-                    is PageSelection.Invalid -> sel.message
-                    is PageSelection.Pages -> "${sel.indices.size} of $total pages selected"
+                    is PageSelection.Invalid -> stringResource(sel.errorRes, *sel.args.toTypedArray())
+                    is PageSelection.Pages -> stringResource(R.string.range_selected, sel.indices.size, total)
                 }
             )
         },
@@ -935,10 +957,10 @@ private fun PagesToPrintControls(vm: PrintViewModel) {
 @Composable
 private fun SizingControls(vm: PrintViewModel) {
     val o = vm.options
-    RadioList(FitMode.entries, o.fit, { it.label }) { vm.updateOptions(o.copy(fit = it)) }
+    RadioList(FitMode.entries, o.fit, { stringResource(it.labelRes) }) { vm.updateOptions(o.copy(fit = it)) }
     HorizontalDivider()
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("Scale", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.scale_label), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         Text("${o.scalePercent}%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
     }
     Slider(
@@ -968,7 +990,7 @@ private fun PositionControls(vm: PrintViewModel) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Anchor", style = MaterialTheme.typography.labelSmall)
+            Text(stringResource(R.string.pos_anchor), style = MaterialTheme.typography.labelSmall)
             Anchor.entries.chunked(3).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     row.forEach { a ->
@@ -981,21 +1003,21 @@ private fun PositionControls(vm: PrintViewModel) {
                                 .clickable { vm.updateOptions(o.copy(anchor = a)) },
                             contentAlignment = Alignment.Center
                         ) {
-                            if (active) Icon(Icons.Default.Check, contentDescription = a.label, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
+                            if (active) Icon(Icons.Default.Check, contentDescription = stringResource(a.labelRes), tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
             }
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Across: ${o.offsetXmm} mm", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.pos_across, o.offsetXmm), style = MaterialTheme.typography.bodySmall)
             Slider(o.offsetXmm.toFloat(), { vm.updateOptions(o.copy(offsetXmm = it.toInt())) }, valueRange = -50f..50f)
-            Text("Down: ${o.offsetYmm} mm", style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.pos_down, o.offsetYmm), style = MaterialTheme.typography.bodySmall)
             Slider(o.offsetYmm.toFloat(), { vm.updateOptions(o.copy(offsetYmm = it.toInt())) }, valueRange = -50f..50f)
         }
     }
     Text(
-        "The anchor sets where the page sits in the spare room; the sliders then nudge it.",
+        stringResource(R.string.pos_hint),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )
@@ -1004,7 +1026,7 @@ private fun PositionControls(vm: PrintViewModel) {
             TextButton(onClick = { vm.updateOptions(o.copy(anchor = Anchor.CENTER, offsetXmm = 0, offsetYmm = 0)) }) {
                 Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text("Reset to centre")
+                Text(stringResource(R.string.pos_reset))
             }
         }
     }
@@ -1044,7 +1066,7 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                             ) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                 Text(
-                                    if (job.page == 0) "Preparing print job..." else "Streaming sheet ${job.page} of ${job.pages}...",
+                                    if (job.page == 0) stringResource(R.string.printing_preparing) else stringResource(R.string.printing_sheet, job.page, job.pages),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
@@ -1082,7 +1104,7 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                         ) {
                             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                             Text(
-                                job.message,
+                                stringResource(R.string.job_done),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.weight(1f)
@@ -1104,7 +1126,7 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                         ) {
                             Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                             Text(
-                                job.message,
+                                stringResource(job.headline ?: R.string.job_failed) + if (job.message.isNotBlank()) "\n" + job.message else "",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.weight(1f)
@@ -1123,12 +1145,12 @@ private fun StickyPrintBar(vm: PrintViewModel) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "${vm.sheetCount} ${if (vm.sheetCount == 1) "Sheet" else "Sheets"}",
+                        pluralStringResource(R.plurals.sheets_count, vm.sheetCount, vm.sheetCount),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "${vm.options.paper.label} • ${if (vm.options.color) "Color" else "Grayscale"}",
+                        stringResource(R.string.bar_paper_mode, vm.options.paper.label, stringResource(if (vm.options.color) R.string.mode_colour else R.string.mode_grayscale)),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1144,7 +1166,7 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                     Icon(Icons.Default.Print, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        if (job is JobState.Printing) "Printing..." else "Print",
+                        stringResource(if (job is JobState.Printing) R.string.printing_button else R.string.print_button),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -1180,17 +1202,17 @@ private fun DiagnosticsBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Printer Diagnostics & Tools",
+                    stringResource(R.string.diag_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 TextButton(onClick = onDismiss) {
-                    Text("Done")
+                    Text(stringResource(R.string.dialog_done))
                 }
             }
 
             Text(
-                "Hardware utilities for inspecting USB endpoints, IPP query responses, and raw test prints.",
+                stringResource(R.string.diag_desc),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1200,19 +1222,19 @@ private fun DiagnosticsBottomSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 OutlinedButton(onClick = vm::describePrinter, shape = RoundedCornerShape(8.dp)) {
-                    Text("USB Interfaces")
+                    Text(stringResource(R.string.diag_usb))
                 }
                 OutlinedButton(onClick = vm::printerAttributes, shape = RoundedCornerShape(8.dp)) {
-                    Text("IPP Attributes")
+                    Text(stringResource(R.string.diag_ipp))
                 }
                 OutlinedButton(onClick = vm::printTestPage, shape = RoundedCornerShape(8.dp)) {
-                    Text("Print Test Page")
+                    Text(stringResource(R.string.diag_test))
                 }
                 OutlinedButton(onClick = vm::openSample, shape = RoundedCornerShape(8.dp)) {
-                    Text("Load Sample PDF")
+                    Text(stringResource(R.string.diag_sample))
                 }
                 OutlinedButton(onClick = vm::clearDiagnostics, shape = RoundedCornerShape(8.dp)) {
-                    Text("Clear")
+                    Text(stringResource(R.string.diag_clear))
                 }
             }
 
@@ -1234,7 +1256,7 @@ private fun DiagnosticsBottomSheet(
                 }
             } else {
                 Text(
-                    "Select an action above to query your connected USB printer.",
+                    stringResource(R.string.diag_prompt),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1251,7 +1273,7 @@ private fun <T> FriendlyChipGroup(
     title: String,
     items: List<T>,
     selected: T,
-    label: (T) -> String,
+    label: @Composable (T) -> String,
     onSelect: (T) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1368,7 +1390,7 @@ private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
             if (bmp != null) {
                 Image(
                     bitmap = bmp.asImageBitmap(),
-                    contentDescription = "Sheet ${vm.pageIndex + 1} of $sheets",
+                    contentDescription = stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets),
                     contentScale = ContentScale.Fit,
                     colorFilter = gray,
                     modifier = Modifier
@@ -1388,23 +1410,23 @@ private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
                     .padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = Color.White) }
                 Text(
-                    "Sheet ${vm.pageIndex + 1} of $sheets" + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
+                    stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets) + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
                     color = Color.White,
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = { vm.setPage(vm.pageIndex - 1) }, enabled = vm.pageIndex > 0) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous sheet", tint = if (vm.pageIndex > 0) Color.White else Color.Gray)
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (vm.pageIndex > 0) Color.White else Color.Gray)
                 }
                 IconButton(onClick = { vm.setPage(vm.pageIndex + 1) }, enabled = vm.pageIndex < sheets - 1) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next sheet", tint = if (vm.pageIndex < sheets - 1) Color.White else Color.Gray)
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet), tint = if (vm.pageIndex < sheets - 1) Color.White else Color.Gray)
                 }
             }
 
             Text(
-                "Pinch or double-tap to zoom. Swipe to change sheet.",
+                stringResource(R.string.viewer_hint),
                 color = Color.White.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier
@@ -1414,4 +1436,35 @@ private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
             )
         }
     }
+}
+
+
+/** Language picker: system default, English or Sinhala. Choosing one restarts the screen in that language. */
+@Composable
+private fun LanguageDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val current = AppLocale.saved(context)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.language_title)) },
+        text = {
+            RadioList(
+                items = AppLocale.choices,
+                selected = current,
+                label = {
+                    stringResource(
+                        when (it) {
+                            "en" -> R.string.language_en
+                            "si" -> R.string.language_si
+                            else -> R.string.language_system
+                        }
+                    )
+                },
+            ) { tag ->
+                onDismiss()
+                if (tag != current) context.findActivity()?.let { AppLocale.change(it, tag) }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_done)) } }
+    )
 }
