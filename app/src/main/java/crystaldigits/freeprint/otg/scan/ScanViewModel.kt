@@ -12,13 +12,19 @@ import androidx.lifecycle.viewModelScope
 import crystaldigits.freeprint.otg.HttpSession
 import crystaldigits.freeprint.otg.R
 import crystaldigits.freeprint.otg.UsbPrinter
+import android.graphics.Bitmap
+import androidx.compose.runtime.mutableIntStateOf
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 /** One scanned page kept on disk as the scanner's own JPEG. */
 class ScanPage(val file: File, val widthPx: Int, val heightPx: Int, val gray: Boolean, val dpi: Int)
+
+/** A decoded preview of one scanned page, with the page number it shows so the UI can animate in the right direction. */
+class ScanPreviewImage(val index: Int, val bitmap: Bitmap)
 
 enum class ScannerStatus { NO_PRINTER, NEEDS_PERMISSION, LOADING, READY, ERROR }
 
@@ -35,6 +41,14 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     var scanning by mutableStateOf(false); private set
     var message by mutableStateOf<ScanMessage?>(null); private set
     var saved by mutableStateOf(false); private set
+
+    /** The page shown in the preview, as an index into [pages]. */
+    var pageIndex by mutableIntStateOf(0); private set
+    var preview by mutableStateOf<ScanPreviewImage?>(null); private set
+    /** Larger picture for the full-screen viewer; null while it is closed. */
+    var largePreview by mutableStateOf<Bitmap?>(null); private set
+    private var largeOpen = false
+    private var previewJob: Job? = null
 
     init {
         // Pages from an earlier run are no longer on screen, so they would only take up space.
@@ -97,26 +111,66 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             scanning = false
-            result.onSuccess { pages = pages + it }.onFailure { message = messageFor(it) }
+            result.onSuccess { pages = pages + it; pageIndex = pages.lastIndex; renderPreview() }.onFailure { message = messageFor(it) }
         }
+    }
+
+    fun selectPage(index: Int) {
+        pageIndex = index.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
+        renderPreview()
     }
 
     fun removePage(index: Int) {
         pages.getOrNull(index)?.file?.delete()
         pages = pages.filterIndexed { i, _ -> i != index }
         saved = false
+        selectPage(if (index <= pageIndex) pageIndex - 1 else pageIndex)
     }
 
+    /** Moves a page earlier (-1) or later (+1); the preview follows it. */
     fun movePage(index: Int, delta: Int) {
         val to = index + delta
         if (index !in pages.indices || to !in pages.indices) return
         pages = pages.toMutableList().apply { add(to, removeAt(index)) }
+        selectPage(to)
     }
 
     fun clearPages() {
         pages.forEach { it.file.delete() }
         pages = emptyList()
         saved = false
+        pageIndex = 0
+        preview = null
+        largePreview = null
+    }
+
+    /** Opens or closes the full-screen viewer; while it is open the larger picture is kept up to date. */
+    fun setLargePreviewOpen(open: Boolean) {
+        largeOpen = open
+        if (!open) largePreview = null
+        renderPreview()
+    }
+
+    /** Decodes the current page for the preview (or the viewer), at the size that is actually shown. */
+    private fun renderPreview() {
+        val page = pages.getOrNull(pageIndex)
+        if (page == null) { preview = null; largePreview = null; return }
+        val index = pageIndex
+        val large = largeOpen
+        previewJob?.cancel()
+        previewJob = viewModelScope.launch(Dispatchers.IO) {
+            val bmp = decode(page.file, if (large) LARGE_SIDE else PREVIEW_SIDE) ?: return@launch
+            if (large) largePreview = bmp else preview = ScanPreviewImage(index, bmp)
+        }
+    }
+
+    /** A JPEG decoded no larger than needed: a 600 dpi A4 colour page would otherwise be 140 MB. */
+    private fun decode(file: File, longestSide: Int): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, bounds)
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / sample > longestSide) sample *= 2
+        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
     }
 
     fun dismissMessage() { message = null }
@@ -183,6 +237,11 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun messageFor(e: Throwable): ScanMessage =
         (e as? ScanException)?.msg ?: ScanMessage(R.string.scan_err_transfer, detail = e.message.orEmpty())
+
+    private companion object {
+        const val PREVIEW_SIDE = 1100
+        const val LARGE_SIDE = 2200
+    }
 
     /** Keeps the chosen settings inside what this scanner offers (resolution list, colour modes). */
     private fun fitToCapabilities(s: ScanSettings, c: EsclCapabilities): ScanSettings {
