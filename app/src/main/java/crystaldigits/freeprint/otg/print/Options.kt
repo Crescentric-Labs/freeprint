@@ -33,9 +33,9 @@ enum class Anchor(@StringRes val labelRes: Int, val fx: Float, val fy: Float) {
     BOTTOM_LEFT(R.string.anchor_bottom_left, 0f, 1f), BOTTOM(R.string.anchor_bottom, .5f, 1f), BOTTOM_RIGHT(R.string.anchor_bottom_right, 1f, 1f),
 }
 
-/** Pages per sheet. [cols] x [rows] is the grid on a portrait sheet; 2-up stacks two sideways pages. */
-enum class PerSheet(val n: Int, val cols: Int, val rows: Int) {
-    ONE(1, 1, 1), TWO(2, 1, 2), FOUR(4, 2, 2), SIX(6, 2, 3), NINE(9, 3, 3);
+/** Pages per sheet, 1 to 8. The grid is chosen to fit the pages best; see [SheetGrid]. Counts like 3, 5 or 7 leave spare cells. */
+enum class PerSheet(val n: Int) {
+    ONE(1), TWO(2), THREE(3), FOUR(4), FIVE(5), SIX(6), SEVEN(7), EIGHT(8);
     val label get() = n.toString()
 }
 
@@ -54,6 +54,8 @@ data class PrintOptions(
     /** Multiplies the size chosen by [fit]; above 100 the page overflows its area and is cropped. */
     val scalePercent: Int = 100,
     val anchor: Anchor = Anchor.CENTER,
+    /** Empty space around the pages in millimetres; null means automatic, see [effectiveMarginMm]. */
+    val marginMm: Int? = null,
     /** Extra shift in millimetres after anchoring; positive is right / down. */
     val offsetXmm: Int = 0,
     val offsetYmm: Int = 0,
@@ -63,6 +65,13 @@ data class PrintOptions(
     /** Hairline around each page when several share a sheet. */
     val border: Boolean = false,
 )
+
+/** Margin used when the user has not chosen one and several pages share a sheet. */
+const val AUTO_NUP_MARGIN_MM = 6
+
+/** The margin actually applied: the chosen one, or automatic (none for one page per sheet, a small one for n-up). */
+val PrintOptions.effectiveMarginMm: Int
+    get() = marginMm ?: if (perSheet.n > 1) AUTO_NUP_MARGIN_MM else 0
 
 const val PRINT_DPI = 600
 const val MIN_SCALE_PERCENT = 10
