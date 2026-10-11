@@ -7,7 +7,9 @@ import android.print.PrintJobId
 import android.printservice.PrintJob
 import android.printservice.PrintService
 import android.printservice.PrinterDiscoverySession
+import crystaldigits.freeprint.otg.AppLocale
 import crystaldigits.freeprint.otg.JobState
+import crystaldigits.freeprint.otg.R
 import crystaldigits.freeprint.otg.UsbPrinter
 import crystaldigits.freeprint.otg.print.FitMode
 import crystaldigits.freeprint.otg.print.JobExecutor
@@ -26,6 +28,9 @@ class UsbPrintService : PrintService() {
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val cancelRequested = ConcurrentHashMap.newKeySet<PrintJobId>()
+
+    /** PrintService.attachBaseContext is final, so strings are read through a context in the app's chosen language. */
+    val localized: android.content.Context by lazy { AppLocale.wrap(this) }
 
     override fun onCreatePrinterDiscoverySession(): PrinterDiscoverySession = UsbDiscoverySession(this)
 
@@ -54,7 +59,7 @@ class UsbPrintService : PrintService() {
                     is JobState.Done -> job.complete()
                     JobState.Cancelled -> job.cancel()
                     is JobState.Failed -> job.fail(result.message.lineSequence().first())
-                    else -> job.fail("Printing failed.")
+                    else -> job.fail(localized.getString(R.string.svc_failed))
                 }
             }
         }
@@ -62,17 +67,17 @@ class UsbPrintService : PrintService() {
 
     private fun run(job: PrintJob, id: PrintJobId, options: PrintOptions, copies: Int): JobState {
         val usb = UsbPrinter(this)
-        val device = usb.findPrinter() ?: return JobState.Failed("The USB printer is not connected.")
+        val device = usb.findPrinter() ?: return JobState.Failed(localized.getString(R.string.svc_no_printer))
         if (!usb.awaitPermission(device)) {
-            return JobState.Failed("USB access was not allowed. Open Free Print and allow access to the printer.")
+            return JobState.Failed(localized.getString(R.string.svc_no_access))
         }
-        val pfd = job.document.data ?: return JobState.Failed("The document could not be read.")
+        val pfd = job.document.data ?: return JobState.Failed(localized.getString(R.string.svc_doc_unreadable))
         return try {
             PdfSource(pfd).use { src ->                     // closes pfd
                 JobExecutor.execute(usb, device, src, options, copies, cancelled = { id in cancelRequested })
             }
         } catch (e: Exception) {
-            JobState.Failed("Could not read the document: ${e.message}")
+            JobState.Failed(localized.getString(R.string.svc_read_failed, e.message.orEmpty()))
         }
     }
 
