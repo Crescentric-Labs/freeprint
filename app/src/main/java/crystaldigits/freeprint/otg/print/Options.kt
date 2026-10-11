@@ -1,5 +1,8 @@
 package crystaldigits.freeprint.otg.print
 
+import androidx.annotation.StringRes
+import crystaldigits.freeprint.otg.R
+
 /** Paper sizes the G2020 advertises. Pixel sizes are at 600 dpi, the printer's only resolution. */
 enum class Paper(val label: String, val media: String, val widthPt: Int, val heightPt: Int, val widthPx: Int, val heightPx: Int) {
     A4("A4", "iso_a4_210x297mm", 595, 842, 4960, 7016),
@@ -10,22 +13,24 @@ enum class Paper(val label: String, val media: String, val widthPt: Int, val hei
 }
 
 /** IPP `print-quality` values: 3 draft, 4 normal, 5 high. */
-enum class Quality(val label: String, val ipp: Int) { DRAFT("Draft", 3), NORMAL("Normal", 4), HIGH("High", 5) }
+enum class Quality(@StringRes val labelRes: Int, val ipp: Int) {
+    DRAFT(R.string.quality_draft, 3), NORMAL(R.string.quality_normal, 4), HIGH(R.string.quality_high, 5)
+}
 
-enum class FitMode(val label: String) {
+enum class FitMode(@StringRes val labelRes: Int) {
     /** Whole page visible, white margins where the aspect ratios differ. */
-    FIT("Fit"),
+    FIT(R.string.fit_fit),
     /** Page covers the whole sheet, the overflow is cropped. */
-    FILL("Fill (crop)"),
+    FILL(R.string.fit_fill),
     /** The page's real physical size (PDF points, or an image assumed to be 300 dpi). */
-    ACTUAL("Actual size"),
+    ACTUAL(R.string.fit_actual),
 }
 
 /** Where the page sits on the sheet when there is spare room (Fit) or overflow (Fill). */
-enum class Anchor(val label: String, val fx: Float, val fy: Float) {
-    TOP_LEFT("Top left", 0f, 0f), TOP("Top", .5f, 0f), TOP_RIGHT("Top right", 1f, 0f),
-    LEFT("Left", 0f, .5f), CENTER("Centre", .5f, .5f), RIGHT("Right", 1f, .5f),
-    BOTTOM_LEFT("Bottom left", 0f, 1f), BOTTOM("Bottom", .5f, 1f), BOTTOM_RIGHT("Bottom right", 1f, 1f),
+enum class Anchor(@StringRes val labelRes: Int, val fx: Float, val fy: Float) {
+    TOP_LEFT(R.string.anchor_top_left, 0f, 0f), TOP(R.string.anchor_top, .5f, 0f), TOP_RIGHT(R.string.anchor_top_right, 1f, 0f),
+    LEFT(R.string.anchor_left, 0f, .5f), CENTER(R.string.anchor_center, .5f, .5f), RIGHT(R.string.anchor_right, 1f, .5f),
+    BOTTOM_LEFT(R.string.anchor_bottom_left, 0f, 1f), BOTTOM(R.string.anchor_bottom, .5f, 1f), BOTTOM_RIGHT(R.string.anchor_bottom_right, 1f, 1f),
 }
 
 /** Pages per sheet. [cols] x [rows] is the grid on a portrait sheet; 2-up stacks two sideways pages. */
@@ -35,9 +40,11 @@ enum class PerSheet(val n: Int, val cols: Int, val rows: Int) {
 }
 
 /** Sheet orientation. Auto follows the first page; landscape turns the content 90 degrees counter-clockwise. */
-enum class Orientation(val label: String) { AUTO("Auto"), PORTRAIT("Portrait"), LANDSCAPE("Landscape") }
+enum class Orientation(@StringRes val labelRes: Int) {
+    AUTO(R.string.orient_auto), PORTRAIT(R.string.orient_portrait), LANDSCAPE(R.string.orient_landscape)
+}
 
-enum class PageOrder(val label: String) { ACROSS("Across, then down"), DOWN("Down, then across") }
+enum class PageOrder(@StringRes val labelRes: Int) { ACROSS(R.string.order_across), DOWN(R.string.order_down) }
 
 data class PrintOptions(
     val paper: Paper = Paper.A4,
