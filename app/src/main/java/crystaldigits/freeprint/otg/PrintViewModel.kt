@@ -6,6 +6,7 @@ import android.graphics.Matrix
 import android.hardware.usb.UsbDevice
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +33,8 @@ sealed interface JobState {
     data object Idle : JobState
     data class Printing(val page: Int, val pages: Int) : JobState
     data class Done(val message: String) : JobState
-    data class Failed(val message: String) : JobState
+    /** [message] is technical detail (English); [headline] is the localized title, or null for the generic one. */
+    data class Failed(val message: String, @StringRes val headline: Int? = null) : JobState
     data object Cancelled : JobState
 }
 
@@ -100,7 +102,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
                     Doc(uri, name, mime, src.pageCount)
                 }
             }.onSuccess { doc = it; pageIndex = 0; rangeText = ""; parity = Parity.ALL; renderPreview() }
-                .onFailure { job = JobState.Failed("Could not open the file: ${it.message}") }
+                .onFailure { job = JobState.Failed(it.message.orEmpty(), R.string.err_open_file) }
         }
     }
 
@@ -168,7 +170,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
                     PageSource.open(ctx, d.uri, d.mime).use { src ->
                         JobExecutor.execute(usb, dev, SelectedPages(src, chosen), opts) { p, n -> job = JobState.Printing(p, n) }
                     }
-                }.getOrElse { JobState.Failed("Printing failed: ${it.message}") }
+                }.getOrElse { JobState.Failed(it.message.orEmpty()) }
             }
             job = result
         }
