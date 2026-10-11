@@ -7,6 +7,26 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroid
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,6 +55,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.OpenWith
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -144,7 +173,7 @@ fun PrintScreen(vm: PrintViewModel) {
                         )
                         Column {
                             Text(
-                                "FreePrint OTG",
+                                "Free Print",
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                             )
                             Text(
@@ -198,21 +227,8 @@ fun PrintScreen(vm: PrintViewModel) {
                     onClearFile = vm::clearDoc
                 )
 
-                // 3. Print Options: Organized, friendly sections
-                EssentialOptionsCard(vm)
-                LayoutAndPagesCard(vm)
-                PlacementAndMarginsCard(vm)
-            }
-
-            // Quick diagnostics access trigger at bottom
-            OutlinedButton(
-                onClick = { showDiagnosticsSheet = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp))
-                Text("Printer Diagnostics & Hardware Tools")
+                // 3. Print settings: one row per setting, each opens a popup
+                SettingsCard(vm)
             }
 
             Spacer(Modifier.height(48.dp))
@@ -500,6 +516,7 @@ private fun DocumentPreviewSection(
     onClearFile: () -> Unit
 ) {
     val doc = vm.doc ?: return
+    var showFullScreen by remember { mutableStateOf(false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Document info chip banner
@@ -606,7 +623,13 @@ private fun DocumentPreviewSection(
                             .aspectRatio(aspect)
                             .shadow(6.dp, RoundedCornerShape(4.dp))
                             .background(Color.White, RoundedCornerShape(4.dp))
-                            .border(BorderStroke(1.dp, Color(0xFFDDDDDD)), RoundedCornerShape(4.dp)),
+                            .border(BorderStroke(1.dp, Color(0xFFDDDDDD)), RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(4.dp))
+                            .clickable(enabled = bmp != null) {
+                                showFullScreen = true
+                                vm.setLargePreviewOpen(true)
+                            }
+                            .swipeToChangeSheet(vm.pageIndex, vm.sheetCount) { vm.setPage(it) },
                         contentAlignment = Alignment.Center
                     ) {
                         if (bmp != null) {
@@ -621,6 +644,19 @@ private fun DocumentPreviewSection(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(36.dp),
                                 strokeWidth = 3.dp
+                            )
+                        }
+                        if (bmp != null) {
+                            Icon(
+                                Icons.Default.Fullscreen,
+                                contentDescription = "Full screen",
+                                tint = Color.White,
+                                modifier = Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .padding(6.dp)
+                                    .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                                    .padding(4.dp)
+                                    .size(18.dp)
                             )
                         }
                     }
@@ -661,434 +697,314 @@ private fun DocumentPreviewSection(
                 }
 
                 Text(
+                    "Tap the sheet to enlarge. Swipe to change sheet.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Text(
                     "${vm.selectedCount} of ${doc.pageCount} page(s) selected • ${sheets} sheet(s) will be printed",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
             }
+    
+        if (showFullScreen) {
+            FullScreenPreview(vm) {
+                showFullScreen = false
+                vm.setLargePreviewOpen(false)
+            }
         }
+    }
     }
 }
 
-/** Primary print configuration options (Paper, Color Mode, Orientation, Quality) */
-@Composable
-private fun EssentialOptionsCard(vm: PrintViewModel) {
+/** One tappable settings row per option group. The row shows the group name and its current value. */
+private enum class Setting(val title: String, val icon: ImageVector) {
+    PAPER("Paper size", Icons.Default.Description),
+    COLOUR("Colour", Icons.Default.Palette),
+    QUALITY("Print quality", Icons.Default.HighQuality),
+    ORIENTATION("Orientation", Icons.Default.ScreenRotation),
+    PAGES("Pages to print", Icons.Default.FormatListNumbered),
+    PER_SHEET("Pages per sheet", Icons.Default.GridView),
+    SIZING("Page size and scale", Icons.Default.FitScreen),
+    POSITION("Position", Icons.Default.OpenWith),
+}
+
+/** The current value of [setting], shown as the row's subtitle. */
+private fun subtitle(vm: PrintViewModel, setting: Setting): String {
     val o = vm.options
+    val total = vm.doc?.pageCount ?: 0
+    return when (setting) {
+        Setting.PAPER -> o.paper.label
+        Setting.COLOUR -> if (o.color) "Colour" else "Grayscale"
+        Setting.QUALITY -> o.quality.label
+        Setting.ORIENTATION -> o.orientation.label
+        Setting.PAGES -> when (val sel = vm.selection) {
+            is PageSelection.Invalid -> "Check the page range"
+            is PageSelection.Pages ->
+                if (vm.rangeText.isBlank() && vm.parity == Parity.ALL) "All pages ($total)"
+                else buildString {
+                    append(vm.rangeText.trim().ifBlank { "All pages" })
+                    if (vm.parity != Parity.ALL) append(", ${vm.parity.label.lowercase()} only")
+                    append(" (${sel.indices.size} of $total)")
+                }
+        }
+        Setting.PER_SHEET ->
+            if (o.perSheet == PerSheet.ONE) "1 per sheet"
+            else "${o.perSheet.n} per sheet, ${o.order.label.lowercase()}${if (o.border) ", with borders" else ""}"
+        Setting.SIZING -> "${o.fit.label}, ${o.scalePercent}%"
+        Setting.POSITION ->
+            if (o.anchor == Anchor.CENTER && o.offsetXmm == 0 && o.offsetYmm == 0) "Centre"
+            else buildString {
+                append(o.anchor.label)
+                if (o.offsetXmm != 0) append(", ${o.offsetXmm} mm across")
+                if (o.offsetYmm != 0) append(", ${o.offsetYmm} mm down")
+            }
+    }
+}
+
+/** All print settings as a plain list; tapping a row opens a popup for just that setting. */
+@Composable
+private fun SettingsCard(vm: PrintViewModel) {
+    var open by remember { mutableStateOf<Setting?>(null) }
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+        Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Text(
-                "Print Settings",
+                "Print settings",
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
             )
+            Setting.entries.forEachIndexed { i, setting ->
+                SettingRow(setting, subtitle(vm, setting)) { open = setting }
+                if (i < Setting.entries.lastIndex) HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            }
+        }
+    }
 
-            // Paper Size
-            FriendlyChipGroup(
-                title = "Paper Size",
-                items = Paper.entries,
-                selected = o.paper,
-                label = { it.label },
-                onSelect = { vm.updateOptions(o.copy(paper = it)) }
+    open?.let { SettingDialog(it, vm) { open = null } }
+}
+
+@Composable
+private fun SettingRow(setting: Setting, value: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(setting.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Column(Modifier.weight(1f)) {
+            Text(setting.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            Text(
+                value,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-            // Color / Monochrome Toggle
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+/** The popup for one setting. Changes apply immediately (the preview updates behind it); Done closes it. */
+@Composable
+private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(setting.title) },
+        text = {
+            val o = vm.options
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        if (o.color) Icons.Default.Palette else Icons.Default.FormatPaint,
-                        contentDescription = null,
-                        tint = if (o.color) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Column {
+                when (setting) {
+                    Setting.PAPER -> RadioList(Paper.entries, o.paper, { it.label }) {
+                        vm.updateOptions(o.copy(paper = it)); onDismiss()
+                    }
+
+                    Setting.COLOUR -> RadioList(listOf(true, false), o.color, { if (it) "Colour" else "Grayscale (black and white)" }) {
+                        vm.updateOptions(o.copy(color = it)); onDismiss()
+                    }
+
+                    Setting.QUALITY -> RadioList(Quality.entries, o.quality, { it.label }) {
+                        vm.updateOptions(o.copy(quality = it)); onDismiss()
+                    }
+
+                    Setting.ORIENTATION -> {
+                        RadioList(Orientation.entries, o.orientation, { it.label }) {
+                            vm.updateOptions(o.copy(orientation = it)); onDismiss()
+                        }
                         Text(
-                            if (o.color) "Color Mode" else "Grayscale Mode",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            if (o.color) "Full color sRGB print" else "Monochrome black & white",
-                            style = MaterialTheme.typography.labelSmall,
+                            "Auto follows the first page. Landscape turns the content a quarter turn counter-clockwise.",
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                }
-                Switch(
-                    checked = o.color,
-                    onCheckedChange = { vm.updateOptions(o.copy(color = it)) },
-                    thumbContent = {
-                        Icon(
-                            if (o.color) Icons.Default.Check else Icons.Default.Close,
-                            contentDescription = null,
-                            modifier = Modifier.size(SwitchDefaults.IconSize)
-                        )
+
+                    Setting.PAGES -> PagesToPrintControls(vm)
+
+                    Setting.PER_SHEET -> {
+                        RadioList(PerSheet.entries, o.perSheet, { if (it == PerSheet.ONE) "1 page per sheet" else "${it.n} pages per sheet" }) {
+                            vm.updateOptions(o.copy(perSheet = it))
+                        }
+                        if (o.perSheet != PerSheet.ONE) {
+                            HorizontalDivider()
+                            Text("Page order", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                            RadioList(PageOrder.entries, o.order, { it.label }) { vm.updateOptions(o.copy(order = it)) }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Border around each page", style = MaterialTheme.typography.bodyMedium)
+                                Switch(checked = o.border, onCheckedChange = { vm.updateOptions(o.copy(border = it)) })
+                            }
+                        }
                     }
-                )
+
+                    Setting.SIZING -> SizingControls(vm)
+                    Setting.POSITION -> PositionControls(vm)
+                }
             }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } }
+    )
+}
 
-            // Orientation
-            FriendlyChipGroup(
-                title = "Orientation",
-                items = Orientation.entries,
-                selected = o.orientation,
-                label = { it.label },
-                onSelect = { vm.updateOptions(o.copy(orientation = it)) }
-            )
-
-            // Quality
-            FriendlyChipGroup(
-                title = "Print Quality",
-                items = Quality.entries,
-                selected = o.quality,
-                label = { it.label },
-                onSelect = { vm.updateOptions(o.copy(quality = it)) }
-            )
+/** Single-choice list: tapping a row picks it. */
+@Composable
+private fun <T> RadioList(items: List<T>, selected: T, label: (T) -> String, onPick: (T) -> Unit) {
+    Column {
+        items.forEach { item ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { onPick(item) }
+                    .padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selected = item == selected, onClick = { onPick(item) })
+                Text(label(item), style = MaterialTheme.typography.bodyLarge)
+            }
         }
     }
 }
 
-/** Expandable page selection, fitting, scale, and N-up multi-page settings */
 @Composable
-private fun LayoutAndPagesCard(vm: PrintViewModel) {
-    var expanded by remember { mutableStateOf(false) }
-    val o = vm.options
+private fun PagesToPrintControls(vm: PrintViewModel) {
     val sel = vm.selection
     val total = vm.doc?.pageCount ?: 0
-
-    ElevatedCard(
+    FriendlyChipGroup("Which pages", Parity.entries, vm.parity, { it.label }) { vm.updateParity(it) }
+    OutlinedTextField(
+        value = vm.rangeText,
+        onValueChange = vm::setRange,
+        label = { Text("Page range (blank = all)") },
+        placeholder = { Text("e.g. 1-3, 5, 8-") },
+        singleLine = true,
+        isError = sel is PageSelection.Invalid,
+        supportingText = {
+            Text(
+                when (sel) {
+                    is PageSelection.Invalid -> sel.message
+                    is PageSelection.Pages -> "${sel.indices.size} of $total pages selected"
+                }
+            )
+        },
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        shape = RoundedCornerShape(12.dp)
+    )
+}
+
+@Composable
+private fun SizingControls(vm: PrintViewModel) {
+    val o = vm.options
+    RadioList(FitMode.entries, o.fit, { it.label }) { vm.updateOptions(o.copy(fit = it)) }
+    HorizontalDivider()
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text("Scale", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+        Text("${o.scalePercent}%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+    }
+    Slider(
+        value = o.scalePercent.toFloat(),
+        onValueChange = { vm.updateOptions(o.copy(scalePercent = it.toInt())) },
+        valueRange = MIN_SCALE_PERCENT.toFloat()..MAX_SCALE_PERCENT.toFloat()
+    )
+    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        listOf(50, 75, 100, 125, 150, 200).forEach { pct ->
+            FilterChip(
+                selected = o.scalePercent == pct,
+                onClick = { vm.updateOptions(o.copy(scalePercent = pct)) },
+                label = { Text("$pct%") },
+                shape = RoundedCornerShape(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PositionControls(vm: PrintViewModel) {
+    val o = vm.options
+    val isCustom = o.anchor != Anchor.CENTER || o.offsetXmm != 0 || o.offsetYmm != 0
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        Icons.Default.FitScreen,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            "Page Selection & Layout",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "${o.fit.label} • ${o.perSheet.label} • Scale ${o.scalePercent}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand"
-                    )
-                }
-            }
-
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier.padding(top = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    HorizontalDivider()
-
-                    // Page Range filter
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Pages to Print", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Parity.entries.forEach { p ->
-                                FilterChip(
-                                    selected = vm.parity == p,
-                                    onClick = { vm.updateParity(p) },
-                                    label = { Text(p.label) }
-                                )
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = vm.rangeText,
-                            onValueChange = vm::setRange,
-                            label = { Text("Custom page range (e.g. 1-3, 5)") },
-                            placeholder = { Text("Leave blank for all") },
-                            singleLine = true,
-                            isError = sel is PageSelection.Invalid,
-                            supportingText = {
-                                Text(
-                                    when (sel) {
-                                        is PageSelection.Invalid -> sel.message
-                                        is PageSelection.Pages -> "${sel.indices.size} of $total pages selected"
-                                    }
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                    }
-
-                    // Fit Mode
-                    FriendlyChipGroup(
-                        title = "Page Sizing",
-                        items = FitMode.entries,
-                        selected = o.fit,
-                        label = { it.label },
-                        onSelect = { vm.updateOptions(o.copy(fit = it)) }
-                    )
-
-                    // Scale
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("Zoom / Scale", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-                            Text("${o.scalePercent}%", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        }
-                        androidx.compose.material3.Slider(
-                            value = o.scalePercent.toFloat(),
-                            onValueChange = { vm.updateOptions(o.copy(scalePercent = it.toInt())) },
-                            valueRange = MIN_SCALE_PERCENT.toFloat()..MAX_SCALE_PERCENT.toFloat()
-                        )
-                        Row(
-                            modifier = Modifier.horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            listOf(50, 75, 100, 125, 150, 200).forEach { pct ->
-                                FilterChip(
-                                    selected = o.scalePercent == pct,
-                                    onClick = { vm.updateOptions(o.copy(scalePercent = pct)) },
-                                    label = { Text("$pct%") },
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // N-up: Pages per sheet
-                    FriendlyChipGroup(
-                        title = "Pages per Sheet (N-Up)",
-                        items = PerSheet.entries,
-                        selected = o.perSheet,
-                        label = { it.label },
-                        onSelect = { vm.updateOptions(o.copy(perSheet = it)) }
-                    )
-
-                    if (o.perSheet != PerSheet.ONE) {
-                        FriendlyChipGroup(
-                            title = "Page Layout Order",
-                            items = PageOrder.entries,
-                            selected = o.order,
-                            label = { it.label },
-                            onSelect = { vm.updateOptions(o.copy(order = it)) }
-                        )
-
-                        Row(
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Anchor", style = MaterialTheme.typography.labelSmall)
+            Anchor.entries.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    row.forEach { a ->
+                        val active = a == o.anchor
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { vm.updateOptions(o.copy(anchor = a)) },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text("Draw border around each page", style = MaterialTheme.typography.bodyMedium)
-                            Switch(
-                                checked = o.border,
-                                onCheckedChange = { vm.updateOptions(o.copy(border = it)) }
-                            )
+                            if (active) Icon(Icons.Default.Check, contentDescription = a.label, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
             }
         }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Across: ${o.offsetXmm} mm", style = MaterialTheme.typography.bodySmall)
+            Slider(o.offsetXmm.toFloat(), { vm.updateOptions(o.copy(offsetXmm = it.toInt())) }, valueRange = -50f..50f)
+            Text("Down: ${o.offsetYmm} mm", style = MaterialTheme.typography.bodySmall)
+            Slider(o.offsetYmm.toFloat(), { vm.updateOptions(o.copy(offsetYmm = it.toInt())) }, valueRange = -50f..50f)
+        }
     }
-}
-
-/** Expandable position anchor and fine margin adjustments */
-@Composable
-private fun PlacementAndMarginsCard(vm: PrintViewModel) {
-    var expanded by remember { mutableStateOf(false) }
-    val o = vm.options
-    val isCustom = o.anchor != Anchor.CENTER || o.offsetXmm != 0 || o.offsetYmm != 0
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        Icons.Default.FilterNone,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            "Position & Margins",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "${o.anchor.label} • X:${o.offsetXmm}mm Y:${o.offsetYmm}mm",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                IconButton(onClick = { expanded = !expanded }) {
-                    Icon(
-                        if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Collapse" else "Expand"
-                    )
-                }
-            }
-
-            AnimatedVisibility(
-                visible = expanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column(
-                    modifier = Modifier.padding(top = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    HorizontalDivider()
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 3x3 interactive alignment anchor
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text("Anchor Grid", style = MaterialTheme.typography.labelSmall)
-                            Anchor.entries.chunked(3).forEach { row ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    row.forEach { a ->
-                                        val active = a == o.anchor
-                                        Box(
-                                            modifier = Modifier
-                                                .size(36.dp)
-                                                .clip(RoundedCornerShape(6.dp))
-                                                .background(
-                                                    if (active) MaterialTheme.colorScheme.primary
-                                                    else MaterialTheme.colorScheme.surfaceVariant
-                                                )
-                                                .clickable { vm.updateOptions(o.copy(anchor = a)) },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            if (active) {
-                                                Icon(
-                                                    Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Sliders for offsets
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Column {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Horizontal: ${o.offsetXmm} mm", style = MaterialTheme.typography.bodySmall)
-                                }
-                                androidx.compose.material3.Slider(
-                                    value = o.offsetXmm.toFloat(),
-                                    onValueChange = { vm.updateOptions(o.copy(offsetXmm = it.toInt())) },
-                                    valueRange = -50f..50f
-                                )
-                            }
-
-                            Column {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Vertical: ${o.offsetYmm} mm", style = MaterialTheme.typography.bodySmall)
-                                }
-                                androidx.compose.material3.Slider(
-                                    value = o.offsetYmm.toFloat(),
-                                    onValueChange = { vm.updateOptions(o.copy(offsetYmm = it.toInt())) },
-                                    valueRange = -50f..50f
-                                )
-                            }
-                        }
-                    }
-
-                    if (isCustom) {
-                        TextButton(
-                            onClick = { vm.updateOptions(o.copy(anchor = Anchor.CENTER, offsetXmm = 0, offsetYmm = 0)) },
-                            modifier = Modifier.align(Alignment.End)
-                        ) {
-                            Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Reset to Center")
-                        }
-                    }
-                }
+    Text(
+        "The anchor sets where the page sits in the spare room; the sliders then nudge it.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    if (isCustom) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = { vm.updateOptions(o.copy(anchor = Anchor.CENTER, offsetXmm = 0, offsetYmm = 0)) }) {
+                Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Reset to centre")
             }
         }
     }
@@ -1360,6 +1276,142 @@ private fun <T> FriendlyChipGroup(
                     )
                 )
             }
+        }
+    }
+}
+
+
+/** Horizontal swipe on this element moves to the previous or next sheet. */
+private fun Modifier.swipeToChangeSheet(current: Int, sheets: Int, onSheet: (Int) -> Unit): Modifier =
+    pointerInput(current, sheets) {
+        var dx = 0f
+        detectHorizontalDragGestures(
+            onDragStart = { dx = 0f },
+            onDragCancel = { dx = 0f },
+            onDragEnd = {
+                when {
+                    dx < -SWIPE_DISTANCE_PX && current < sheets - 1 -> onSheet(current + 1)
+                    dx > SWIPE_DISTANCE_PX && current > 0 -> onSheet(current - 1)
+                }
+            },
+        ) { _, drag -> dx += drag }
+    }
+
+private const val SWIPE_DISTANCE_PX = 90f
+
+/**
+ * Full-screen sheet viewer: pinch to zoom (up to 8x), drag to pan, double-tap to zoom in or out.
+ * While not zoomed, a horizontal swipe changes sheet.
+ */
+@Composable
+private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+    ) {
+        var scale by remember { mutableFloatStateOf(1f) }
+        var offset by remember { mutableStateOf(Offset.Zero) }
+        var box by remember { mutableStateOf(IntSize.Zero) }
+        val sheets = vm.sheetCount
+        val bmp = vm.largePreview
+        val gray = if (vm.options.color) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+
+        // A different sheet starts un-zoomed.
+        LaunchedEffect(vm.pageIndex) { scale = 1f; offset = Offset.Zero }
+
+        fun clamp(o: Offset, s: Float): Offset {
+            val mx = box.width * (s - 1f) / 2f
+            val my = box.height * (s - 1f) / 2f
+            return Offset(o.x.coerceIn(-mx, mx), o.y.coerceIn(-my, my))
+        }
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xFF111111))
+                .onSizeChanged { box = it }
+                .pointerInput(Unit) {
+                    detectTapGestures(onDoubleTap = {
+                        if (scale > 1.05f) { scale = 1f; offset = Offset.Zero } else scale = 3f
+                    })
+                }
+                .pointerInput(sheets, vm.pageIndex) {
+                    awaitEachGesture {
+                        awaitFirstDown(requireUnconsumed = false)
+                        var panX = 0f
+                        var multiTouch = false
+                        do {
+                            val event = awaitPointerEvent()
+                            if (event.changes.size > 1) multiTouch = true
+                            val zoom = event.calculateZoom()
+                            val pan = event.calculatePan()
+                            val centroid = event.calculateCentroid(useCurrent = false)
+                            if (zoom != 1f || pan != Offset.Zero) {
+                                val newScale = (scale * zoom).coerceIn(1f, 8f)
+                                val c = centroid - Offset(box.width / 2f, box.height / 2f)
+                                val factor = newScale / scale
+                                offset = clamp(c - (c - offset) * factor + pan, newScale)
+                                scale = newScale
+                                panX += pan.x
+                                event.changes.forEach { if (it.positionChanged()) it.consume() }
+                            }
+                        } while (event.changes.any { it.pressed })
+                        if (scale <= 1.02f && !multiTouch) {
+                            when {
+                                panX < -SWIPE_DISTANCE_PX && vm.pageIndex < sheets - 1 -> vm.setPage(vm.pageIndex + 1)
+                                panX > SWIPE_DISTANCE_PX && vm.pageIndex > 0 -> vm.setPage(vm.pageIndex - 1)
+                            }
+                        }
+                    }
+                }
+        ) {
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = "Sheet ${vm.pageIndex + 1} of $sheets",
+                    contentScale = ContentScale.Fit,
+                    colorFilter = gray,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
+                )
+            } else {
+                CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
+            }
+
+            // Top bar: close, sheet position, reset zoom
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .background(Color.Black.copy(alpha = 0.45f))
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White) }
+                Text(
+                    "Sheet ${vm.pageIndex + 1} of $sheets" + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(onClick = { vm.setPage(vm.pageIndex - 1) }, enabled = vm.pageIndex > 0) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous sheet", tint = if (vm.pageIndex > 0) Color.White else Color.Gray)
+                }
+                IconButton(onClick = { vm.setPage(vm.pageIndex + 1) }, enabled = vm.pageIndex < sheets - 1) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next sheet", tint = if (vm.pageIndex < sheets - 1) Color.White else Color.Gray)
+                }
+            }
+
+            Text(
+                "Pinch or double-tap to zoom. Swipe to change sheet.",
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp),
+            )
         }
     }
 }
