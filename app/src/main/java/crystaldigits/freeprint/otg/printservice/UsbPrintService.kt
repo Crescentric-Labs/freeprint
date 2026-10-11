@@ -64,7 +64,7 @@ class UsbPrintService : PrintService() {
         val usb = UsbPrinter(this)
         val device = usb.findPrinter() ?: return JobState.Failed("The USB printer is not connected.")
         if (!usb.awaitPermission(device)) {
-            return JobState.Failed("USB access was not allowed. Open OTG Print and allow access to the printer.")
+            return JobState.Failed("USB access was not allowed. Open Free Print and allow access to the printer.")
         }
         val pfd = job.document.data ?: return JobState.Failed("The document could not be read.")
         return try {

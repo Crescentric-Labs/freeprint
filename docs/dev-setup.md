@@ -59,9 +59,9 @@ logs `libusb_wrap_sys_device` or `claim` errors, record the exact error name in 
 ## Testing the print service on the phone
 
 1. Install the APK. Then enable the service: Settings, Connections, More connection settings, Printing (on
-   other phones: Settings, Connected devices, Connection preferences, Printing), switch on "OTG Print".
+   other phones: Settings, Connected devices, Connection preferences, Printing), switch on "Free Print".
 2. Connect the printer. From any app (Chrome, Files, Gallery) choose Share or Print, then pick the USB printer
    in the print dialog's printer list.
-3. The first job asks for USB access with the system dialog; allow it. Choosing "Always open OTG Print" when
+3. The first job asks for USB access with the system dialog; allow it. Choosing "Always open Free Print" when
    the printer is plugged in makes that permission stick.
 4. Watch `adb logcat FreePrintNative:I AndroidRuntime:E '*:S'` and `adb shell dumpsys print` for job state.
