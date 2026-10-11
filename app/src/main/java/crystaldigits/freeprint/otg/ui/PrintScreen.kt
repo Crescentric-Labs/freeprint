@@ -1,19 +1,39 @@
 package crystaldigits.freeprint.otg.ui
 
-import androidx.annotation.StringRes
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
-import crystaldigits.freeprint.otg.AppLocale
-import crystaldigits.freeprint.otg.AppLocale.findActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.filled.Crop
+import crystaldigits.freeprint.otg.print.effectiveMarginMm
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculateCentroid
@@ -21,24 +41,6 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChanged
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,10 +52,15 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,14 +70,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.FormatListNumbered
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.HighQuality
-import androidx.compose.material.icons.filled.OpenWith
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Slider
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -82,8 +84,16 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.FilterNone
 import androidx.compose.material.icons.filled.FitScreen
+import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.FormatPaint
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
@@ -92,6 +102,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.UsbOff
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -110,7 +121,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -120,26 +133,45 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import crystaldigits.freeprint.otg.AppLocale
+import crystaldigits.freeprint.otg.AppLocale.findActivity
 import crystaldigits.freeprint.otg.JobState
 import crystaldigits.freeprint.otg.PrintViewModel
 import crystaldigits.freeprint.otg.R
@@ -155,14 +187,30 @@ import crystaldigits.freeprint.otg.print.Parity
 import crystaldigits.freeprint.otg.print.PerSheet
 import crystaldigits.freeprint.otg.print.Quality
 
+
+private enum class PrinterStatusType {
+    DISCONNECTED,
+    PERMISSION_NEEDED,
+    READY
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrintScreen(vm: PrintViewModel) {
-    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) vm.open(uri)
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) vm.replaceFiles(uris)
+    }
+    val addPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isNotEmpty()) vm.addFiles(uris)
     }
     var showDiagnosticsSheet by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var refreshSpinDegrees by remember { mutableFloatStateOf(0f) }
+    val animatedRefreshSpin by animateFloatAsState(
+        targetValue = refreshSpinDegrees,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "refresh_spin"
+    )
 
     Scaffold(
         topBar = {
@@ -196,8 +244,15 @@ fun PrintScreen(vm: PrintViewModel) {
                     IconButton(onClick = { showLanguageDialog = true }) {
                         Icon(Icons.Default.Language, contentDescription = stringResource(R.string.cd_language))
                     }
-                    IconButton(onClick = vm::refreshPrinter) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_rescan))
+                    IconButton(onClick = {
+                        refreshSpinDegrees += 360f
+                        vm.refreshPrinter()
+                    }) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = stringResource(R.string.cd_rescan),
+                            modifier = Modifier.graphicsLayer { rotationZ = animatedRefreshSpin }
+                        )
                     }
                     IconButton(onClick = { showDiagnosticsSheet = true }) {
                         Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.cd_diagnostics))
@@ -209,7 +264,11 @@ fun PrintScreen(vm: PrintViewModel) {
             )
         },
         bottomBar = {
-            if (vm.doc != null) {
+            AnimatedVisibility(
+                visible = vm.doc != null,
+                enter = slideInVertically(tween(350, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
+                exit = slideOutVertically(tween(300, easing = FastOutSlowInEasing)) { it } + fadeOut(tween(200))
+            ) {
                 StickyPrintBar(vm)
             }
         }
@@ -222,24 +281,47 @@ fun PrintScreen(vm: PrintViewModel) {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Printer connection status banner
-            PrinterStatusCard(vm)
+            // 1. Printer connection status banner with animated transitions
+            PrinterStatusCard(
+                vm = vm,
+                onRescan = {
+                    refreshSpinDegrees += 360f
+                    vm.refreshPrinter()
+                }
+            )
 
-            // 2. Document picker or loaded document preview
-            if (vm.doc == null) {
-                EmptyDocumentHero(
-                    onChooseFile = { picker.launch(arrayOf("application/pdf", "image/*")) },
-                    onLoadSample = vm::openSample
-                )
-            } else {
-                DocumentPreviewSection(
-                    vm = vm,
-                    onChangeFile = { picker.launch(arrayOf("application/pdf", "image/*")) },
-                    onClearFile = vm::clearDoc
-                )
+            // 2. Animated transition between Empty Hero and Document Print Workspace
+            AnimatedContent(
+                targetState = vm.doc != null,
+                transitionSpec = {
+                    if (targetState) {
+                        (fadeIn(tween(350)) + slideInVertically(tween(350)) { 50 }).togetherWith(
+                            fadeOut(tween(200)) + shrinkVertically(tween(200))
+                        )
+                    } else {
+                        (fadeIn(tween(350)) + expandVertically(tween(350))).togetherWith(
+                            fadeOut(tween(200)) + slideOutVertically(tween(200)) { 50 }
+                        )
+                    }
+                },
+                label = "doc_workspace"
+            ) { hasDoc ->
+                if (!hasDoc) {
+                    EmptyDocumentHero(
+                        onChooseFile = { picker.launch(arrayOf("application/pdf", "image/*")) },
+                        onLoadSample = vm::openSample
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        DocumentPreviewSection(
+                            vm = vm,
+                            onAddFiles = { addPicker.launch(arrayOf("application/pdf", "image/*")) }
+                        )
 
-                // 3. Print settings: one row per setting, each opens a popup
-                SettingsCard(vm)
+                        // 3. Print settings: one row per setting, each opens a popup
+                        SettingsCard(vm)
+                    }
+                }
             }
 
             Spacer(Modifier.height(48.dp))
@@ -256,170 +338,230 @@ fun PrintScreen(vm: PrintViewModel) {
     }
 }
 
-/** Modern status card showing USB printer connection state with clear visual cues */
+/** Modern status card showing USB printer connection state with living animations */
 @Composable
-private fun PrinterStatusCard(vm: PrintViewModel) {
+private fun PrinterStatusCard(
+    vm: PrintViewModel,
+    onRescan: () -> Unit
+) {
     val name = vm.printerName
     val hasPermission = vm.hasPermission
 
-    when {
-        name == null -> {
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.outlinedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.UsbOff,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            stringResource(R.string.printer_none_title),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            stringResource(R.string.printer_none_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Button(
-                        onClick = vm::refreshPrinter,
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text(stringResource(R.string.scan), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-        }
+    val currentStatus = when {
+        name == null -> PrinterStatusType.DISCONNECTED
+        !hasPermission -> PrinterStatusType.PERMISSION_NEEDED
+        else -> PrinterStatusType.READY
+    }
 
-        !hasPermission -> {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+    AnimatedContent(
+        targetState = currentStatus,
+        transitionSpec = {
+            (fadeIn(tween(300)) + expandVertically(tween(300))).togetherWith(
+                fadeOut(tween(200)) + shrinkVertically(tween(200))
+            )
+        },
+        label = "printer_status_card"
+    ) { status ->
+        when (status) {
+            PrinterStatusType.DISCONNECTED -> {
+                OutlinedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     Row(
+                        modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                stringResource(R.string.printer_permission_needed),
-                                style = MaterialTheme.typography.bodySmall
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.UsbOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                    }
-                    Button(
-                        onClick = vm::requestPermission,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Default.Usb, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.grant_permission))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.printer_none_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                stringResource(R.string.printer_none_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Button(
+                            onClick = onRescan,
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(stringResource(R.string.scan), style = MaterialTheme.typography.labelMedium)
+                        }
                     }
                 }
             }
-        }
 
-        else -> {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-                ),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
+            PrinterStatusType.PERMISSION_NEEDED -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    )
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Print,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    Column(modifier = Modifier.weight(1f)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
                             )
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            ) {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    stringResource(R.string.ready),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    name ?: stringResource(R.string.printer_fallback),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    stringResource(R.string.printer_permission_needed),
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
-                        Text(
-                            stringResource(R.string.printer_mode),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Button(
+                            onClick = vm::requestPermission,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.Usb, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.grant_permission))
+                        }
                     }
-                    IconButton(onClick = vm::refreshPrinter) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_refresh), tint = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            PrinterStatusType.READY -> {
+                // Living breathing pulse for the ready indicator dot
+                val infiniteTransition = rememberInfiniteTransition(label = "ready_pulse")
+                val pulseScale by infiniteTransition.animateFloat(
+                    initialValue = 0.85f,
+                    targetValue = 1.25f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1200, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "pulse_scale"
+                )
+                val pulseAlpha by infiniteTransition.animateFloat(
+                    initialValue = 0.35f,
+                    targetValue = 0.95f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1200, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "pulse_alpha"
+                )
+
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                    ),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(46.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Print,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    name ?: stringResource(R.string.printer_fallback),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .graphicsLayer {
+                                                    scaleX = pulseScale
+                                                    scaleY = pulseScale
+                                                    alpha = pulseAlpha
+                                                }
+                                                .clip(CircleShape)
+                                                .background(Color.White)
+                                        )
+                                        Text(
+                                            stringResource(R.string.ready),
+                                            style = MaterialTheme.typography.labelSmall
+                                        )
+                                    }
+                                }
+                            }
+                            Text(
+                                stringResource(R.string.printer_mode),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onRescan) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = stringResource(R.string.cd_refresh),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -427,7 +569,7 @@ private fun PrinterStatusCard(vm: PrintViewModel) {
     }
 }
 
-/** Inviting empty state hero card when no file has been selected */
+/** Inviting empty state hero card with soft hover shadow */
 @Composable
 private fun EmptyDocumentHero(
     onChooseFile: () -> Unit,
@@ -521,18 +663,25 @@ private fun EmptyDocumentHero(
     }
 }
 
-/** Document details bar and live sheet preview canvas */
+/** Document details bar and live sheet preview canvas with page-turn slide animation */
 @Composable
 private fun DocumentPreviewSection(
     vm: PrintViewModel,
-    onChangeFile: () -> Unit,
-    onClearFile: () -> Unit
+    onAddFiles: () -> Unit
 ) {
     val doc = vm.doc ?: return
     var showFullScreen by remember { mutableStateOf(false) }
 
+    // Smooth color matrix desaturation animation
+    val saturation by animateFloatAsState(
+        targetValue = if (vm.options.color) 1f else 0f,
+        animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+        label = "saturation_fade"
+    )
+    val colorFilter = if (saturation >= 0.99f) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(saturation) })
+
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // Document info chip banner
+        // Chosen files in print order: PDFs and images can be mixed, added to, removed and reordered
         OutlinedCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -540,52 +689,90 @@ private fun DocumentPreviewSection(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
             )
         ) {
-            Row(
+            Column(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
+                vm.files.forEachIndexed { index, file ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (file.mime == "application/pdf") Icons.Default.PictureAsPdf else Icons.Default.Image,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                file.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                stringResource(
+                                    R.string.doc_meta,
+                                    pluralStringResource(R.plurals.pages_count, file.pageCount, file.pageCount),
+                                    file.mime ?: stringResource(R.string.doc_fallback)
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        if (vm.files.size > 1) {
+                            IconButton(onClick = { vm.moveFile(index, -1) }, enabled = index > 0, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.ArrowUpward, contentDescription = stringResource(R.string.cd_move_up), modifier = Modifier.size(18.dp))
+                            }
+                            IconButton(onClick = { vm.moveFile(index, 1) }, enabled = index < vm.files.lastIndex, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.ArrowDownward, contentDescription = stringResource(R.string.cd_move_down), modifier = Modifier.size(18.dp))
+                            }
+                        }
+                        IconButton(onClick = { vm.removeFile(index) }, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_file), modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        Icons.Default.Description,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        doc.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        stringResource(R.string.doc_meta, pluralStringResource(R.plurals.pages_count, doc.pageCount, doc.pageCount), doc.mime ?: stringResource(R.string.doc_fallback)),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                TextButton(onClick = onChangeFile) {
-                    Text(stringResource(R.string.change))
-                }
-
-                IconButton(onClick = onClearFile, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_clear_file), modifier = Modifier.size(18.dp))
+                    if (vm.files.size > 1) {
+                        Text(
+                            stringResource(R.string.files_order_hint),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    TextButton(onClick = onAddFiles) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text(stringResource(R.string.add_files))
+                    }
                 }
             }
         }
 
-        // Live Paper Sheet Canvas
+        // Live Paper Sheet Canvas with realistic elevation
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -619,21 +806,26 @@ private fun DocumentPreviewSection(
                     }
                 }
 
-                val bmp = vm.preview
-                val bw = if (vm.options.color) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-                val aspect = bmp?.let { it.width.toFloat() / it.height }
-                    ?: (vm.options.paper.widthPx.toFloat() / vm.options.paper.heightPx)
+                SheetStrip(vm)
 
-                // Realistic sheet container with elevation shadow
+                val bmp = vm.preview
+                val targetAspect = bmp?.let { it.width.toFloat() / it.height }
+                    ?: (vm.options.paper.widthPx.toFloat() / vm.options.paper.heightPx)
+                val animatedAspect by animateFloatAsState(
+                    targetValue = targetAspect,
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                    label = "aspect_ratio_spring"
+                )
+
+                // Realistic sheet container with animated page navigation
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
                             .widthIn(max = 260.dp)
-                            .aspectRatio(aspect)
+                            .aspectRatio(animatedAspect)
                             .shadow(6.dp, RoundedCornerShape(4.dp))
                             .background(Color.White, RoundedCornerShape(4.dp))
                             .border(BorderStroke(1.dp, Color(0xFFDDDDDD)), RoundedCornerShape(4.dp))
@@ -645,19 +837,50 @@ private fun DocumentPreviewSection(
                             .swipeToChangeSheet(vm.pageIndex, vm.sheetCount) { vm.setPage(it) },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (bmp != null) {
-                            Image(
-                                bitmap = bmp.asImageBitmap(),
-                                contentDescription = stringResource(R.string.cd_sheet_preview),
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Fit,
-                                colorFilter = bw
-                            )
-                        } else {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(36.dp),
-                                strokeWidth = 3.dp
-                            )
+                        AnimatedContent(
+                            // Keyed on the image and the sheet it shows, so the direction comes from the sheet that
+                            // actually changed and a new picture of the same sheet just cross-fades.
+                            targetState = vm.previewImage,
+                            transitionSpec = {
+                                val from = initialState?.sheet
+                                val to = targetState?.sheet
+                                val slide = tween<IntOffset>(280, easing = FastOutSlowInEasing)
+                                val transform = when {
+                                    from == null || to == null -> fadeIn(tween(200)).togetherWith(fadeOut(tween(200)))
+                                    to > from ->                                  // forward: the new sheet comes in from the right
+                                        (slideInHorizontally(slide) { width -> width } + fadeIn(tween(250))).togetherWith(
+                                            slideOutHorizontally(slide) { width -> -width } + fadeOut(tween(200))
+                                        )
+                                    to < from ->                                  // back: the new sheet comes in from the left
+                                        (slideInHorizontally(slide) { width -> -width } + fadeIn(tween(250))).togetherWith(
+                                            slideOutHorizontally(slide) { width -> width } + fadeOut(tween(200))
+                                        )
+                                    else -> fadeIn(tween(220)).togetherWith(fadeOut(tween(220)))
+                                }
+                                transform.using(SizeTransform(clip = false))
+                            },
+                            label = "page_flip"
+                        ) { image ->
+                            val currentBmp = image?.bitmap
+                            if (currentBmp != null) {
+                                Image(
+                                    bitmap = currentBmp.asImageBitmap(),
+                                    contentDescription = stringResource(R.string.cd_sheet_preview),
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Fit,
+                                    colorFilter = colorFilter
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(36.dp),
+                                        strokeWidth = 3.dp
+                                    )
+                                }
+                            }
                         }
                         if (bmp != null) {
                             Icon(
@@ -722,14 +945,14 @@ private fun DocumentPreviewSection(
                     textAlign = TextAlign.Center
                 )
             }
-    
+        }
+
         if (showFullScreen) {
             FullScreenPreview(vm) {
                 showFullScreen = false
                 vm.setLargePreviewOpen(false)
             }
         }
-    }
     }
 }
 
@@ -742,6 +965,7 @@ private enum class Setting(@StringRes val titleRes: Int, val icon: ImageVector) 
     PAGES(R.string.setting_pages, Icons.Default.FormatListNumbered),
     PER_SHEET(R.string.setting_per_sheet, Icons.Default.GridView),
     SIZING(R.string.setting_sizing, Icons.Default.FitScreen),
+    MARGINS(R.string.setting_margins, Icons.Default.Crop),
     POSITION(R.string.setting_position, Icons.Default.OpenWith),
 }
 
@@ -777,6 +1001,11 @@ private fun subtitle(vm: PrintViewModel, setting: Setting): String {
             else stringResource(R.string.sub_per_sheet_n, o.perSheet.n, stringResource(o.order.labelRes)) +
                 if (o.border) ", " + stringResource(R.string.sub_with_borders) else ""
         Setting.SIZING -> stringResource(R.string.sub_sizing, stringResource(o.fit.labelRes), o.scalePercent)
+        Setting.MARGINS -> when (o.marginMm) {
+            null -> stringResource(R.string.margin_auto)
+            0 -> stringResource(R.string.margin_none)
+            else -> stringResource(R.string.margin_mm, o.marginMm)
+        }
         Setting.POSITION ->
             if (o.anchor == Anchor.CENTER && o.offsetXmm == 0 && o.offsetYmm == 0) stringResource(R.string.sub_pos_centre)
             else listOfNotNull(
@@ -901,6 +1130,7 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
                     }
 
                     Setting.SIZING -> SizingControls(vm)
+                    Setting.MARGINS -> MarginControls(vm)
                     Setting.POSITION -> PositionControls(vm)
                 }
             }
@@ -981,6 +1211,39 @@ private fun SizingControls(vm: PrintViewModel) {
 }
 
 @Composable
+private fun MarginControls(vm: PrintViewModel) {
+    val o = vm.options
+    val shown = o.effectiveMarginMm
+    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        FilterChip(
+            selected = o.marginMm == null,
+            onClick = { vm.updateOptions(o.copy(marginMm = null)) },
+            label = { Text(stringResource(R.string.margin_auto)) },
+            shape = RoundedCornerShape(8.dp)
+        )
+        listOf(0, 5, 13, 25).forEach { mm ->
+            FilterChip(
+                selected = o.marginMm == mm,
+                onClick = { vm.updateOptions(o.copy(marginMm = mm)) },
+                label = { Text(if (mm == 0) stringResource(R.string.margin_none) else stringResource(R.string.margin_mm, mm)) },
+                shape = RoundedCornerShape(8.dp)
+            )
+        }
+    }
+    Text(stringResource(R.string.margin_custom, shown), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+    Slider(
+        value = shown.toFloat(),
+        onValueChange = { vm.updateOptions(o.copy(marginMm = it.toInt())) },
+        valueRange = 0f..50f
+    )
+    Text(
+        stringResource(R.string.margin_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
 private fun PositionControls(vm: PrintViewModel) {
     val o = vm.options
     val isCustom = o.anchor != Anchor.CENTER || o.offsetXmm != 0 || o.offsetYmm != 0
@@ -1032,7 +1295,7 @@ private fun PositionControls(vm: PrintViewModel) {
     }
 }
 
-/** Sticky bottom bar with quick print summary, print button, and active progress */
+/** Sticky bottom bar with animated job feedback & smooth progress */
 @Composable
 private fun StickyPrintBar(vm: PrintViewModel) {
     val job = vm.job
@@ -1049,93 +1312,108 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            when (job) {
-                is JobState.Printing -> {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(
+            AnimatedContent(
+                targetState = job,
+                transitionSpec = {
+                    (fadeIn(tween(250)) + expandVertically(tween(250, easing = FastOutSlowInEasing))).togetherWith(
+                        fadeOut(tween(200)) + shrinkVertically(tween(200, easing = FastOutSlowInEasing))
+                    )
+                },
+                label = "job_state_banner"
+            ) { currentJob ->
+                when (currentJob) {
+                    is JobState.Printing -> {
+                        val targetProgress = if (currentJob.pages > 0) {
+                            (currentJob.page.toFloat() / currentJob.pages.toFloat()).coerceIn(0f, 1f)
+                        } else 0f
+                        val animatedProgress by animateFloatAsState(
+                            targetValue = targetProgress,
+                            animationSpec = spring(stiffness = Spring.StiffnessLow),
+                            label = "print_stream_progress"
+                        )
+
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(
+                                modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                                 Text(
-                                    if (job.page == 0) stringResource(R.string.printing_preparing) else stringResource(R.string.printing_sheet, job.page, job.pages),
+                                    if (currentJob.page == 0) stringResource(R.string.printing_preparing) else stringResource(R.string.printing_sheet, currentJob.page, currentJob.pages),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
-                        }
-                        if (job.pages > 0) {
-                            LinearProgressIndicator(
-                                progress = { (job.page.toFloat() / job.pages.toFloat()).coerceIn(0f, 1f) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp)
-                                    .clip(RoundedCornerShape(3.dp))
-                            )
-                        } else {
-                            LinearProgressIndicator(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(6.dp)
-                                    .clip(RoundedCornerShape(3.dp))
-                            )
+                            if (currentJob.pages > 0) {
+                                LinearProgressIndicator(
+                                    progress = { animatedProgress },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                )
+                            } else {
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp))
+                                )
+                            }
                         }
                     }
-                }
 
-                is JobState.Done -> {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    is JobState.Done -> {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
                         ) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                stringResource(R.string.job_done),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                Text(
+                                    stringResource(R.string.job_done),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
-                }
 
-                is JobState.Failed -> {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.errorContainer
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    is JobState.Failed -> {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.errorContainer
                         ) {
-                            Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                            Text(
-                                stringResource(job.headline ?: R.string.job_failed) + if (job.message.isNotBlank()) "\n" + job.message else "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                Text(
+                                    stringResource(currentJob.headline ?: R.string.job_failed) +
+                                        if (currentJob.message.isNotBlank()) "\n" + currentJob.message else "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
                         }
                     }
-                }
 
-                else -> {}
+                    else -> {}
+                }
             }
 
             Row(
@@ -1267,7 +1545,7 @@ private fun DiagnosticsBottomSheet(
     }
 }
 
-/** Reusable horizontal chip selector with clear active selection styling */
+/** Reusable horizontal chip selector with clear active selection animation */
 @Composable
 private fun <T> FriendlyChipGroup(
     title: String,
@@ -1284,16 +1562,27 @@ private fun <T> FriendlyChipGroup(
         ) {
             items.forEach { item ->
                 val isSelected = item == selected
+                val chipContainerColor by animateColorAsState(
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+                    animationSpec = tween(200),
+                    label = "chip_container_color"
+                )
                 FilterChip(
                     selected = isSelected,
                     onClick = { onSelect(item) },
                     label = { Text(label(item)) },
                     leadingIcon = if (isSelected) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     } else null,
                     shape = RoundedCornerShape(10.dp),
                     colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedContainerColor = chipContainerColor,
                         selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 )
@@ -1301,7 +1590,6 @@ private fun <T> FriendlyChipGroup(
         }
     }
 }
-
 
 /** Horizontal swipe on this element moves to the previous or next sheet. */
 private fun Modifier.swipeToChangeSheet(current: Int, sheets: Int, onSheet: (Int) -> Unit): Modifier =
@@ -1322,8 +1610,8 @@ private fun Modifier.swipeToChangeSheet(current: Int, sheets: Int, onSheet: (Int
 private const val SWIPE_DISTANCE_PX = 90f
 
 /**
- * Full-screen sheet viewer: pinch to zoom (up to 8x), drag to pan, double-tap to zoom in or out.
- * While not zoomed, a horizontal swipe changes sheet.
+ * Full-screen sheet viewer: pinch to zoom (up to 8x), drag to pan, double-tap to zoom in or out. While not
+ * zoomed, a horizontal swipe changes sheet. A strip of sheet thumbnails below the image jumps to any sheet.
  */
 @Composable
 private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
@@ -1347,97 +1635,194 @@ private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
             return Offset(o.x.coerceIn(-mx, mx), o.y.coerceIn(-my, my))
         }
 
-        Box(
+        Column(
             Modifier
                 .fillMaxSize()
                 .background(Color(0xFF111111))
-                .onSizeChanged { box = it }
-                .pointerInput(Unit) {
-                    detectTapGestures(onDoubleTap = {
-                        if (scale > 1.05f) { scale = 1f; offset = Offset.Zero } else scale = 3f
-                    })
-                }
-                .pointerInput(sheets, vm.pageIndex) {
-                    awaitEachGesture {
-                        awaitFirstDown(requireUnconsumed = false)
-                        var panX = 0f
-                        var multiTouch = false
-                        do {
-                            val event = awaitPointerEvent()
-                            if (event.changes.size > 1) multiTouch = true
-                            val zoom = event.calculateZoom()
-                            val pan = event.calculatePan()
-                            val centroid = event.calculateCentroid(useCurrent = false)
-                            if (zoom != 1f || pan != Offset.Zero) {
-                                val newScale = (scale * zoom).coerceIn(1f, 8f)
-                                val c = centroid - Offset(box.width / 2f, box.height / 2f)
-                                val factor = newScale / scale
-                                offset = clamp(c - (c - offset) * factor + pan, newScale)
-                                scale = newScale
-                                panX += pan.x
-                                event.changes.forEach { if (it.positionChanged()) it.consume() }
-                            }
-                        } while (event.changes.any { it.pressed })
-                        if (scale <= 1.02f && !multiTouch) {
-                            when {
-                                panX < -SWIPE_DISTANCE_PX && vm.pageIndex < sheets - 1 -> vm.setPage(vm.pageIndex + 1)
-                                panX > SWIPE_DISTANCE_PX && vm.pageIndex > 0 -> vm.setPage(vm.pageIndex - 1)
+        ) {
+            // The zoomable image area. Gestures live here only, so the thumbnail strip below scrolls on its own.
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clipToBounds()
+                    .onSizeChanged { box = it }
+                    .pointerInput(Unit) {
+                        detectTapGestures(onDoubleTap = {
+                            if (scale > 1.05f) { scale = 1f; offset = Offset.Zero } else scale = 3f
+                        })
+                    }
+                    .pointerInput(sheets, vm.pageIndex) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            var panX = 0f
+                            var multiTouch = false
+                            do {
+                                val event = awaitPointerEvent()
+                                if (event.changes.size > 1) multiTouch = true
+                                val zoom = event.calculateZoom()
+                                val pan = event.calculatePan()
+                                val centroid = event.calculateCentroid(useCurrent = false)
+                                if (zoom != 1f || pan != Offset.Zero) {
+                                    val newScale = (scale * zoom).coerceIn(1f, 8f)
+                                    val c = centroid - Offset(box.width / 2f, box.height / 2f)
+                                    val factor = newScale / scale
+                                    offset = clamp(c - (c - offset) * factor + pan, newScale)
+                                    scale = newScale
+                                    panX += pan.x
+                                    event.changes.forEach { if (it.positionChanged()) it.consume() }
+                                }
+                            } while (event.changes.any { it.pressed })
+                            if (scale <= 1.02f && !multiTouch) {
+                                when {
+                                    panX < -SWIPE_DISTANCE_PX && vm.pageIndex < sheets - 1 -> vm.setPage(vm.pageIndex + 1)
+                                    panX > SWIPE_DISTANCE_PX && vm.pageIndex > 0 -> vm.setPage(vm.pageIndex - 1)
+                                }
                             }
                         }
                     }
-                }
-        ) {
-            if (bmp != null) {
-                Image(
-                    bitmap = bmp.asImageBitmap(),
-                    contentDescription = stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets),
-                    contentScale = ContentScale.Fit,
-                    colorFilter = gray,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
-                )
-            } else {
-                CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
-            }
-
-            // Top bar: close, sheet position, reset zoom
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .background(Color.Black.copy(alpha = 0.45f))
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = Color.White) }
-                Text(
-                    stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets) + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = { vm.setPage(vm.pageIndex - 1) }, enabled = vm.pageIndex > 0) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (vm.pageIndex > 0) Color.White else Color.Gray)
+                if (bmp != null) {
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets),
+                        contentScale = ContentScale.Fit,
+                        colorFilter = gray,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
+                    )
+                } else {
+                    CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
                 }
-                IconButton(onClick = { vm.setPage(vm.pageIndex + 1) }, enabled = vm.pageIndex < sheets - 1) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet), tint = if (vm.pageIndex < sheets - 1) Color.White else Color.Gray)
+
+                // Top bar: close, sheet position, previous and next
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = Color.White) }
+                    Text(
+                        stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets) + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { vm.setPage(vm.pageIndex - 1) }, enabled = vm.pageIndex > 0) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (vm.pageIndex > 0) Color.White else Color.Gray)
+                    }
+                    IconButton(onClick = { vm.setPage(vm.pageIndex + 1) }, enabled = vm.pageIndex < sheets - 1) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet), tint = if (vm.pageIndex < sheets - 1) Color.White else Color.Gray)
+                    }
                 }
             }
 
-            Text(
-                stringResource(R.string.viewer_hint),
-                color = Color.White.copy(alpha = 0.8f),
-                style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
+            // Thumbnails of every sheet, then the hint
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1B1B1B))
                     .navigationBarsPadding()
-                    .padding(bottom = 12.dp),
-            )
+                    .padding(top = 6.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                SheetStrip(vm, onDark = true)
+                Text(
+                    stringResource(R.string.viewer_hint),
+                    color = Color.White.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
     }
 }
 
+/**
+ * Thumbnails of every sheet. Tapping one shows it in the preview; the active one is outlined in the accent colour with
+ * a bold label, and the strip scrolls to keep it in view. Hidden when there is only one sheet. Thumbnails are rendered
+ * lazily as they scroll into view.
+ */
+@Composable
+private fun SheetStrip(vm: PrintViewModel, onDark: Boolean = false) {
+    val sheets = vm.sheetCount
+    if (sheets <= 1) return
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val thumbWidthPx = with(density) { 70.dp.toPx() }
+
+    // Keep the active sheet centred when it changes (arrows, swipes or a tap on a thumbnail).
+    LaunchedEffect(vm.pageIndex, sheets) {
+        val viewport = listState.layoutInfo.viewportSize.width
+        listState.animateScrollToItem(vm.pageIndex.coerceIn(0, sheets - 1), -(viewport / 2 - (thumbWidthPx / 2).toInt()))
+    }
+
+    LazyRow(
+        state = listState,
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+    ) {
+        items(sheets, key = { it }) { i -> SheetThumbnail(vm, i, active = i == vm.pageIndex, onDark = onDark) }
+    }
+}
+
+@Composable
+private fun SheetThumbnail(vm: PrintViewModel, sheet: Int, active: Boolean, onDark: Boolean) {
+    // Reading thumbVersion makes this redraw when a thumbnail arrives or the cache is cleared.
+    val bmp = vm.thumbnail(sheet)
+    LaunchedEffect(sheet, vm.thumbVersion) { if (bmp == null) vm.requestThumbnail(sheet) }
+
+    val aspect = bmp?.let { it.width.toFloat() / it.height } ?: (vm.options.paper.widthPx.toFloat() / vm.options.paper.heightPx)
+    val gray = if (vm.options.color) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+    // On the black viewer the accent colour may be too dim, so the active sheet is outlined in white there.
+    val accent = if (onDark) Color.White else MaterialTheme.colorScheme.primary
+    val borderColor = if (active) accent else if (onDark) Color(0xFF666666) else MaterialTheme.colorScheme.outlineVariant
+    val labelColor = if (active) accent else if (onDark) Color(0xFFBBBBBB) else MaterialTheme.colorScheme.onSurfaceVariant
+    val description = stringResource(R.string.sheet_x_of_y, sheet + 1, vm.sheetCount)
+
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { vm.setPage(sheet) }
+            .padding(2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .height(84.dp)
+                .aspectRatio(aspect)
+                .shadow(if (active) 4.dp else 1.dp, RoundedCornerShape(3.dp))
+                .background(Color.White, RoundedCornerShape(3.dp))
+                .border(BorderStroke(if (active) 2.5.dp else 1.dp, borderColor), RoundedCornerShape(3.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = description,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit,
+                    colorFilter = gray
+                )
+            } else {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)))
+            }
+        }
+        Text(
+            vm.sheetLabel(sheet),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+            color = labelColor,
+            maxLines = 1
+        )
+    }
+}
 
 /** Language picker: system default, English or Sinhala. Choosing one restarts the screen in that language. */
 @Composable
