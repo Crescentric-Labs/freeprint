@@ -9,6 +9,7 @@ import android.print.PrinterId
 import android.print.PrinterInfo
 import android.printservice.PrinterDiscoverySession
 import androidx.core.content.ContextCompat
+import crystaldigits.freeprint.otg.R
 import crystaldigits.freeprint.otg.UsbPrinter
 
 /** Tells the print framework whether a USB printer is attached, and keeps that current as it is plugged in or out. */
@@ -27,7 +28,7 @@ class UsbDiscoverySession(private val service: UsbPrintService) : PrinterDiscove
         if (dev != null) {
             val name = listOfNotNull(dev.manufacturerName, dev.productName).joinToString(" ").ifBlank { "USB printer" }
             val info = PrinterInfo.Builder(printerId, name, PrinterInfo.STATUS_IDLE)
-                .setDescription("USB, driverless (IPP)")
+                .setDescription(service.localized.getString(R.string.svc_printer_desc))
                 .setCapabilities(PrinterProfile.capabilities(printerId))
                 .build()
             addPrinters(listOf(info))
