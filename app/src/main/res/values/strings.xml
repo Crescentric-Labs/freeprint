@@ -123,6 +123,17 @@
     <string name="scanning">Scanning… this can take up to a minute.</string>
     <string name="scan_place_hint">Place the page face down on the glass, then tap Scan.</string>
     <string name="cd_scan_page">Scanned page %1$d</string>
+    <string name="scan_preview_title">Scan preview</string>
+    <string name="page_x_of_y">Page %1$d of %2$d</string>
+    <string name="scan_preview_hint">Tap the page to enlarge. Swipe to change page.</string>
+    <string name="scan_viewer_hint">Pinch or double-tap to zoom. Swipe to change page.</string>
+    <string name="scan_empty_title">Ready to scan</string>
+    <string name="scan_no_pages">No pages yet</string>
+    <string name="scan_bar_detail">%1$s • %2$s • %3$s</string>
+    <string name="scan_output_title">Save or print</string>
+    <string name="cd_page_earlier">Move page earlier</string>
+    <string name="cd_page_later">Move page later</string>
+    <string name="cd_delete_page">Delete page</string>
     <string name="scan_save_pdf">Save PDF</string>
     <string name="scan_share">Share</string>
     <string name="scan_print">Print a copy</string>
