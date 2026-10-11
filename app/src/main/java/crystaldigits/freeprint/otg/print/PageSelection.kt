@@ -57,7 +57,7 @@ sealed interface PageSelection {
 /** A view of [source] showing only [indices], in order. Does not own or close [source]. */
 class SelectedPages(private val source: PageSource, private val indices: List<Int>) : PageSource {
     override val pageCount get() = indices.size
-    override val unitsPerInch get() = source.unitsPerInch
+    override fun unitsPerInch(index: Int) = source.unitsPerInch(indices[index])
     override fun pageSize(index: Int) = source.pageSize(indices[index])
     override fun render(index: Int, bitmap: Bitmap, matrix: Matrix) = source.render(indices[index], bitmap, matrix)
     override fun close() {}
