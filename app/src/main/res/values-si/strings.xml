@@ -123,6 +123,17 @@
     <string name="scanning">ස්කෑන් කරමින්… මෙයට විනාඩියක් පමණ ගත විය හැක.</string>
     <string name="scan_place_hint">පිටුව වීදුරුව මත මුහුණ පහළට තබා ස්කෑන් තට්ටු කරන්න.</string>
     <string name="cd_scan_page">ස්කෑන් කළ පිටුව %1$d</string>
+    <string name="scan_preview_title">ස්කෑන් පෙරදසුන</string>
+    <string name="page_x_of_y">පිටුව %1$d / %2$d</string>
+    <string name="scan_preview_hint">විශාල කිරීමට පිටුව තට්ටු කරන්න. පිටුව මාරු කිරීමට ස්වයිප් කරන්න.</string>
+    <string name="scan_viewer_hint">විශාල කිරීමට පින්ච් කරන්න හෝ දෙවරක් තට්ටු කරන්න. පිටුව මාරු කිරීමට ස්වයිප් කරන්න.</string>
+    <string name="scan_empty_title">ස්කෑන් කිරීමට සූදානම්</string>
+    <string name="scan_no_pages">තවම පිටු නැත</string>
+    <string name="scan_bar_detail">%1$s • %2$s • %3$s</string>
+    <string name="scan_output_title">සුරකින්න හෝ මුද්‍රණය කරන්න</string>
+    <string name="cd_page_earlier">පිටුව කලින් ගෙන යන්න</string>
+    <string name="cd_page_later">පිටුව පසුව ගෙන යන්න</string>
+    <string name="cd_delete_page">පිටුව මකන්න</string>
     <string name="scan_save_pdf">PDF සුරකින්න</string>
     <string name="scan_share">බෙදාගන්න</string>
     <string name="scan_print">පිටපතක් මුද්‍රණය කරන්න</string>
