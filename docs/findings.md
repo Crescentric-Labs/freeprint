@@ -145,6 +145,25 @@ photos poorly, so USB throughput and printing speed matter there), polling `Get-
 report completion, and error handling (a failed job mid-stream may leave the printer needing a
 power cycle).
 
+## Scanning: eSCL over the same USB link
+
+The G2020's scanner is reachable without any Canon-specific protocol. On both IPP-over-USB interfaces (IF2 and IF3, alt 1)
+the printer answers HTTP requests for **eSCL** (the AirScan protocol, Mopria-certified), measured 2026-10-11 from the phone:
+
+- `GET /eSCL/ScannerCapabilities` returns 200 with 3,980 bytes of XML: model "Canon G2020 series", flatbed
+  ("Platen") input of `MaxWidth` 2550 by `MaxHeight` 3508 in 1/300 inch, colour modes `Grayscale8` and `RGB24` (default),
+  content types Photo, Text, TextAndPhoto, Halftone, Thru and Auto, and document formats `image/jpeg` (default) and
+  `application/pdf`. The diagnostics panel truncated the capture before the resolution list, so that list has not been seen.
+- `GET /eSCL/ScannerStatus` returns 200 with `<pwg:State>Idle</pwg:State>`.
+- `GET /` (the admin page advertised as `AdminURI`) times out; it is not needed.
+- No document feeder is advertised, so scanning is flatbed only.
+
+The scan flow implemented is the standard one: `POST /eSCL/ScanJobs` with a `ScanSettings` body (region in
+`escl:ThreeHundredthsOfInches`, `Platen`, colour mode, resolution, `image/jpeg`); a 201 reply carries the job in `Location`;
+`GET <job>/NextDocument` waits while the glass is scanned and returns the JPEG; `DELETE <job>` tidies up. A page is
+turned into a PDF page by embedding the JPEG as a `DCTDecode` image sized at pixels / dpi. **Not yet run against the
+printer**; see the status in the README.
+
 ## Open questions
 
 - URF versus PWG raster for production. PWG raster works on Mac and Android today; URF is lighter to encode.
