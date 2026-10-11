@@ -24,6 +24,7 @@ S = {
  "printer_none_title": ("No USB printer connected", "USB මුද්‍රණ යන්ත්‍රයක් සම්බන්ධ කර නැත"),
  "printer_none_hint": ("Plug in your USB OTG adapter and turn on the printer.", "ඔබේ USB OTG ඇඩැප්ටරය සවි කර මුද්‍රණ යන්ත්‍රය ක්‍රියාත්මක කරන්න."),
  "scan": ("Scan", "සොයන්න"),
+ "printer_fallback": ("USB printer", "USB මුද්‍රණ යන්ත්‍රය"),
  "printer_permission_needed": ("USB permission needed to communicate with printer.", "මුද්‍රණ යන්ත්‍රය සමඟ සන්නිවේදනය කිරීමට USB අවසරය අවශ්‍යයි."),
  "grant_permission": ("Allow USB access", "USB ප්‍රවේශයට ඉඩ දෙන්න"),
  "ready": ("Ready", "සූදානම්"),
@@ -31,7 +32,11 @@ S = {
 
  "hero_title": ("Ready to print", "මුද්‍රණයට සූදානම්"),
  "hero_body": ("Select any PDF or image to configure options and print directly to your USB printer.", "ඕනෑම PDF හෝ රූපයක් තෝරා විකල්ප සකසා ඔබේ USB මුද්‍රණ යන්ත්‍රයෙන් සෘජුවම මුද්‍රණය කරන්න."),
- "select_document": ("Select document or image", "ලේඛනයක් හෝ රූපයක් තෝරන්න"),
+ "select_document": ("Select documents or images", "ලේඛන හෝ රූප තෝරන්න"),
+ "add_files": ("Add files", "ගොනු එක් කරන්න"),
+ "cd_move_up": ("Move up", "ඉහළට ගෙන යන්න"),
+ "cd_move_down": ("Move down", "පහළට ගෙන යන්න"),
+ "files_order_hint": ("Files print in the order shown. PDFs and images can be mixed.", "ගොනු පෙන්වා ඇති අනුපිළිවෙලට මුද්‍රණය වේ. PDF සහ රූප මිශ්‍ර කළ හැක."),
  "load_sample": ("Load sample multi-page PDF", "බහු-පිටු නියැදි PDF පූරණය කරන්න"),
 
  "doc_meta": ("%1$s • %2$s", "%1$s • %2$s"),
@@ -52,6 +57,7 @@ S = {
  "setting_pages": ("Pages to print", "මුද්‍රණය කළ යුතු පිටු"),
  "setting_per_sheet": ("Pages per sheet", "පත්‍රයකට පිටු ගණන"),
  "setting_sizing": ("Page size and scale", "පිටු ප්‍රමාණය සහ පරිමාණය"),
+ "setting_margins": ("Margins", "මායිම්"),
  "setting_position": ("Position", "පිහිටීම"),
 
  "sub_check_range": ("Check the page range", "පිටු පරාසය පරීක්ෂා කරන්න"),
@@ -86,6 +92,11 @@ S = {
  "pos_across": ("Across: %1$d mm", "තිරස්: මි.මී. %1$d"),
  "pos_down": ("Down: %1$d mm", "සිරස්: මි.මී. %1$d"),
  "pos_hint": ("The anchor sets where the page sits in the spare room; the sliders then nudge it.", "ස්ථාන ලක්ෂ්‍යය මගින් පිටුව ඉතිරි ඉඩෙහි පිහිටන තැන තීරණය කරයි; ස්ලයිඩර මගින් එය තව දුරටත් මාරු කළ හැක."),
+ "margin_auto": ("Automatic", "ස්වයංක්‍රීය"),
+ "margin_none": ("None", "නැත"),
+ "margin_mm": ("%1$d mm", "මි.මී. %1$d"),
+ "margin_custom": ("Margin: %1$d mm", "මායිම: මි.මී. %1$d"),
+ "margin_hint": ("Empty space kept around the pages. Automatic means none for one page per sheet and 6 mm when several share a sheet. The printer cannot print right to the paper edge, so very small margins may be clipped.", "පිටු වටා හිස්ව තබන ඉඩ. ස්වයංක්‍රීය යනු පත්‍රයකට එක් පිටුවක් සඳහා නැත, පිටු කිහිපයක් එකට ඇති විට මි.මී. 6 කි. මුද්‍රණ යන්ත්‍රයට කඩදාසියේ කෙළවරට ඉතා ආසන්නව මුද්‍රණය කළ නොහැකි බැවින් ඉතා කුඩා මායිම් කැපී යා හැක."),
  "pos_reset": ("Reset to centre", "මැදට යළි සකසන්න"),
 
  "printing_preparing": ("Preparing print job…", "මුද්‍රණ කාර්යය සූදානම් කරමින්…"),
