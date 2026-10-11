@@ -50,6 +50,9 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     var rangeText by mutableStateOf(""); private set
     var parity by mutableStateOf(Parity.ALL); private set
     var preview by mutableStateOf<Bitmap?>(null); private set
+    /** High-resolution sheet for the full-screen viewer; null while the viewer is closed. */
+    var largePreview by mutableStateOf<Bitmap?>(null); private set
+    private var largeOpen = false
     var job by mutableStateOf<JobState>(JobState.Idle); private set
     var diagnostics by mutableStateOf(""); private set
 
@@ -116,26 +119,39 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Re-renders the on-screen preview with the same layout matrix the print job will use. */
+    /** Opens or closes the full-screen viewer; while it is open only the large preview is kept up to date. */
+    fun setLargePreviewOpen(open: Boolean) {
+        largeOpen = open
+        if (!open) largePreview = null
+        renderPreview()
+    }
+
+    /** Re-renders the preview (small, or large while the viewer is open) with the same layout the print job uses. */
     private fun renderPreview() {
         if (doc == null) return
         val o = options
         val page = pageIndex
         val chosen = (selection as? PageSelection.Pages)?.indices
-        if (chosen == null) { preview = null; return }
+        if (chosen == null) { preview = null; largePreview = null; return }
+        val large = largeOpen
         previewJob?.cancel()
         previewJob = viewModelScope.launch(Dispatchers.IO) {
             val bmp = sourceLock.withLock {
                 val src = previewSource ?: return@withLock null
-                val scale = PREVIEW_WIDTH.toFloat() / o.paper.widthPx
-                SheetComposer(SelectedPages(src, chosen), o, scale, maxRows = (o.paper.heightPx * scale).toInt()).use { composer ->
-                    val out = Bitmap.createBitmap(composer.width, composer.height, Bitmap.Config.ARGB_8888)
-                    composer.renderRows(page.coerceAtMost(composer.sheetCount - 1), 0, composer.height, out)
-                    // Show a landscape sheet the way it reads (the raster itself is always portrait).
-                    if (composer.landscape) Bitmap.createBitmap(out, 0, 0, out.width, out.height, Matrix().apply { postRotate(-90f) }, true) else out
-                }
+                composeSheet(SelectedPages(src, chosen), o, page, if (large) LARGE_PREVIEW_WIDTH else PREVIEW_WIDTH)
             }
-            if (bmp != null) preview = bmp
+            if (bmp != null) { if (large) largePreview = bmp else preview = bmp }
+        }
+    }
+
+    /** One sheet as the reader sees it, [width] pixels wide. Caller holds [sourceLock]. */
+    private fun composeSheet(src: PageSource, o: PrintOptions, page: Int, width: Int): Bitmap {
+        val scale = width.toFloat() / o.paper.widthPx
+        return SheetComposer(src, o, scale, maxRows = (o.paper.heightPx * scale).toInt()).use { composer ->
+            val out = Bitmap.createBitmap(composer.width, composer.height, Bitmap.Config.ARGB_8888)
+            composer.renderRows(page.coerceAtMost(composer.sheetCount - 1), 0, composer.height, out)
+            // Show a landscape sheet the way it reads (the raster itself is always portrait).
+            if (composer.landscape) Bitmap.createBitmap(out, 0, 0, out.width, out.height, Matrix().apply { postRotate(-90f) }, true) else out
         }
     }
 
@@ -193,5 +209,8 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         runCatching { previewSource?.close() }
     }
 
-    private companion object { const val PREVIEW_WIDTH = 720 }
+    private companion object {
+        const val PREVIEW_WIDTH = 720
+        const val LARGE_PREVIEW_WIDTH = 2000     // enough detail to zoom in on a phone screen
+    }
 }
