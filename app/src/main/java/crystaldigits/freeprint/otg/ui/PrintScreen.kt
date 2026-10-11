@@ -1089,33 +1089,8 @@ private fun SettingsCard(vm: PrintViewModel) {
 }
 
 @Composable
-private fun SettingRow(setting: Setting, value: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Icon(setting.icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(setting.titleRes), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-            Text(
-                value,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
+private fun SettingRow(setting: Setting, value: String, onClick: () -> Unit) =
+    SettingRow(setting.icon, stringResource(setting.titleRes), value, onClick)
 
 /** The popup for one setting. Changes apply immediately (the preview updates behind it); Done closes it. */
 @Composable
@@ -1184,25 +1159,6 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
     )
 }
 
-/** Single-choice list: tapping a row picks it. */
-@Composable
-private fun <T> RadioList(items: List<T>, selected: T, label: @Composable (T) -> String, onPick: (T) -> Unit) {
-    Column {
-        items.forEach { item ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable { onPick(item) }
-                    .padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(selected = item == selected, onClick = { onPick(item) })
-                Text(label(item), style = MaterialTheme.typography.bodyLarge)
-            }
-        }
-    }
-}
 
 @Composable
 private fun PagesToPrintControls(vm: PrintViewModel) {
@@ -1639,238 +1595,48 @@ private fun <T> FriendlyChipGroup(
     }
 }
 
-/** Horizontal swipe on this element moves to the previous or next sheet. */
-private fun Modifier.swipeToChangeSheet(current: Int, sheets: Int, onSheet: (Int) -> Unit): Modifier =
-    pointerInput(current, sheets) {
-        var dx = 0f
-        detectHorizontalDragGestures(
-            onDragStart = { dx = 0f },
-            onDragCancel = { dx = 0f },
-            onDragEnd = {
-                when {
-                    dx < -SWIPE_DISTANCE_PX && current < sheets - 1 -> onSheet(current + 1)
-                    dx > SWIPE_DISTANCE_PX && current > 0 -> onSheet(current - 1)
-                }
-            },
-        ) { _, drag -> dx += drag }
-    }
 
-private const val SWIPE_DISTANCE_PX = 90f
 
-/**
- * Full-screen sheet viewer: pinch to zoom (up to 8x), drag to pan, double-tap to zoom in or out. While not
- * zoomed, a horizontal swipe changes sheet. A strip of sheet thumbnails below the image jumps to any sheet.
- */
+/** The sheet viewer: zoom, pan, swipe and a thumbnail strip; see [ZoomableViewer]. */
 @Composable
 private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-    ) {
-        var scale by remember { mutableFloatStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) }
-        var box by remember { mutableStateOf(IntSize.Zero) }
-        val sheets = vm.sheetCount
-        val bmp = vm.largePreview
-        val gray = if (vm.options.color) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-
-        // A different sheet starts un-zoomed.
-        LaunchedEffect(vm.pageIndex) { scale = 1f; offset = Offset.Zero }
-
-        fun clamp(o: Offset, s: Float): Offset {
-            val mx = box.width * (s - 1f) / 2f
-            val my = box.height * (s - 1f) / 2f
-            return Offset(o.x.coerceIn(-mx, mx), o.y.coerceIn(-my, my))
-        }
-
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(Color(0xFF111111))
-        ) {
-            // The zoomable image area. Gestures live here only, so the thumbnail strip below scrolls on its own.
-            Box(
-                Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .clipToBounds()
-                    .onSizeChanged { box = it }
-                    .pointerInput(Unit) {
-                        detectTapGestures(onDoubleTap = {
-                            if (scale > 1.05f) { scale = 1f; offset = Offset.Zero } else scale = 3f
-                        })
-                    }
-                    .pointerInput(sheets, vm.pageIndex) {
-                        awaitEachGesture {
-                            awaitFirstDown(requireUnconsumed = false)
-                            var panX = 0f
-                            var multiTouch = false
-                            do {
-                                val event = awaitPointerEvent()
-                                if (event.changes.size > 1) multiTouch = true
-                                val zoom = event.calculateZoom()
-                                val pan = event.calculatePan()
-                                val centroid = event.calculateCentroid(useCurrent = false)
-                                if (zoom != 1f || pan != Offset.Zero) {
-                                    val newScale = (scale * zoom).coerceIn(1f, 8f)
-                                    val c = centroid - Offset(box.width / 2f, box.height / 2f)
-                                    val factor = newScale / scale
-                                    offset = clamp(c - (c - offset) * factor + pan, newScale)
-                                    scale = newScale
-                                    panX += pan.x
-                                    event.changes.forEach { if (it.positionChanged()) it.consume() }
-                                }
-                            } while (event.changes.any { it.pressed })
-                            if (scale <= 1.02f && !multiTouch) {
-                                when {
-                                    panX < -SWIPE_DISTANCE_PX && vm.pageIndex < sheets - 1 -> vm.setPage(vm.pageIndex + 1)
-                                    panX > SWIPE_DISTANCE_PX && vm.pageIndex > 0 -> vm.setPage(vm.pageIndex - 1)
-                                }
-                            }
-                        }
-                    }
-            ) {
-                if (bmp != null) {
-                    Image(
-                        bitmap = bmp.asImageBitmap(),
-                        contentDescription = stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets),
-                        contentScale = ContentScale.Fit,
-                        colorFilter = gray,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
-                    )
-                } else {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
-                }
-
-                // Top bar: close, sheet position, previous and next
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding()
-                        .background(Color.Black.copy(alpha = 0.45f))
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = Color.White) }
-                    Text(
-                        stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, sheets) + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = { vm.setPage(vm.pageIndex - 1) }, enabled = vm.pageIndex > 0) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (vm.pageIndex > 0) Color.White else Color.Gray)
-                    }
-                    IconButton(onClick = { vm.setPage(vm.pageIndex + 1) }, enabled = vm.pageIndex < sheets - 1) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet), tint = if (vm.pageIndex < sheets - 1) Color.White else Color.Gray)
-                    }
-                }
-            }
-
-            // Thumbnails of every sheet, then the hint
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF1B1B1B))
-                    .navigationBarsPadding()
-                    .padding(top = 6.dp, bottom = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SheetStrip(vm, onDark = true)
-                Text(
-                    stringResource(R.string.viewer_hint),
-                    color = Color.White.copy(alpha = 0.8f),
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-        }
-    }
+    val position = stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, vm.sheetCount)
+    ZoomableViewer(
+        image = vm.largePreview?.asImageBitmap(),
+        grayscale = !vm.options.color,
+        title = position,
+        description = position,
+        hint = stringResource(R.string.viewer_hint),
+        count = vm.sheetCount,
+        current = vm.pageIndex,
+        onSelect = vm::setPage,
+        onDismiss = onDismiss,
+        strip = { SheetStrip(vm, onDark = true) },
+    )
 }
 
-/**
- * Thumbnails of every sheet. Tapping one shows it in the preview; the active one is outlined in the accent colour with
- * a bold label, and the strip scrolls to keep it in view. Hidden when there is only one sheet. Thumbnails are rendered
- * lazily as they scroll into view.
- */
+/** Thumbnails of every sheet, rendered lazily by the view-model; see [ThumbStrip]. */
 @Composable
 private fun SheetStrip(vm: PrintViewModel, onDark: Boolean = false) {
-    val sheets = vm.sheetCount
-    if (sheets <= 1) return
-    val listState = rememberLazyListState()
-    val density = LocalDensity.current
-    val thumbWidthPx = with(density) { 70.dp.toPx() }
-
-    // Keep the active sheet centred when it changes (arrows, swipes or a tap on a thumbnail).
-    LaunchedEffect(vm.pageIndex, sheets) {
-        val viewport = listState.layoutInfo.viewportSize.width
-        listState.animateScrollToItem(vm.pageIndex.coerceIn(0, sheets - 1), -(viewport / 2 - (thumbWidthPx / 2).toInt()))
-    }
-
-    LazyRow(
-        state = listState,
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
-    ) {
-        items(sheets, key = { it }) { i -> SheetThumbnail(vm, i, active = i == vm.pageIndex, onDark = onDark) }
-    }
+    val paperAspect = vm.options.paper.widthPx.toFloat() / vm.options.paper.heightPx
+    ThumbStrip(
+        count = vm.sheetCount,
+        current = vm.pageIndex,
+        onSelect = vm::setPage,
+        aspectFor = { i -> vm.thumbnail(i)?.let { it.width.toFloat() / it.height } ?: paperAspect },
+        labelFor = vm::sheetLabel,
+        descriptionFor = { i -> stringResource(R.string.sheet_x_of_y, i + 1, vm.sheetCount) },
+        bitmapFor = { i ->
+            val bmp = vm.thumbnail(i)
+            // Reading thumbVersion makes this redraw when a thumbnail arrives or the cache is cleared.
+            LaunchedEffect(i, vm.thumbVersion) { if (bmp == null) vm.requestThumbnail(i) }
+            bmp?.asImageBitmap()
+        },
+        onDark = onDark,
+        grayscale = !vm.options.color,
+    )
 }
 
-@Composable
-private fun SheetThumbnail(vm: PrintViewModel, sheet: Int, active: Boolean, onDark: Boolean) {
-    // Reading thumbVersion makes this redraw when a thumbnail arrives or the cache is cleared.
-    val bmp = vm.thumbnail(sheet)
-    LaunchedEffect(sheet, vm.thumbVersion) { if (bmp == null) vm.requestThumbnail(sheet) }
-
-    val aspect = bmp?.let { it.width.toFloat() / it.height } ?: (vm.options.paper.widthPx.toFloat() / vm.options.paper.heightPx)
-    val gray = if (vm.options.color) null else ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
-    // On the black viewer the accent colour may be too dim, so the active sheet is outlined in white there.
-    val accent = if (onDark) Color.White else MaterialTheme.colorScheme.primary
-    val borderColor = if (active) accent else if (onDark) Color(0xFF666666) else MaterialTheme.colorScheme.outlineVariant
-    val labelColor = if (active) accent else if (onDark) Color(0xFFBBBBBB) else MaterialTheme.colorScheme.onSurfaceVariant
-    val description = stringResource(R.string.sheet_x_of_y, sheet + 1, vm.sheetCount)
-
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable { vm.setPage(sheet) }
-            .padding(2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .height(84.dp)
-                .aspectRatio(aspect)
-                .shadow(if (active) 4.dp else 1.dp, RoundedCornerShape(3.dp))
-                .background(Color.White, RoundedCornerShape(3.dp))
-                .border(BorderStroke(if (active) 2.5.dp else 1.dp, borderColor), RoundedCornerShape(3.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            if (bmp != null) {
-                Image(
-                    bitmap = bmp.asImageBitmap(),
-                    contentDescription = description,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Fit,
-                    colorFilter = gray
-                )
-            } else {
-                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)))
-            }
-        }
-        Text(
-            vm.sheetLabel(sheet),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-            color = labelColor,
-            maxLines = 1
-        )
-    }
-}
 
 /** Language picker: system default, English or Sinhala. Choosing one restarts the screen in that language. */
 @Composable
