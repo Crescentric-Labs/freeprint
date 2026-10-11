@@ -44,8 +44,8 @@ class SheetComposer(
 
     private val dpi = PRINT_DPI * scale
     private val per = options.perSheet
-    private val cols = if (landscape) per.rows else per.cols
-    private val rows = if (landscape) per.cols else per.rows
+    private val cols: Int
+    private val rows: Int
     val sheetCount = ceil(source.pageCount / per.n.toDouble()).toInt().coerceAtLeast(1)
 
     private val cells: List<Cell>
@@ -58,8 +58,17 @@ class SheetComposer(
         val sheetW = if (landscape) height else width       // layout-space sheet size
         val sheetH = if (landscape) width else height
         // Single pages use the whole sheet; shared sheets get a margin and a gutter.
-        val margin = if (per.n == 1) 0 else (6 * dpi / MM_PER_INCH).roundToInt()
+        val wantedMargin = (options.effectiveMarginMm * dpi / MM_PER_INCH).roundToInt()
+        val margin = min(wantedMargin, (min(sheetW, sheetH) * MAX_MARGIN_FRACTION).toInt())     // never swallow the sheet
         val gutter = if (per.n == 1) 0 else (4 * dpi / MM_PER_INCH).roundToInt()
+        // The grid that draws the first page largest; the same grid is used on every sheet so they look alike.
+        val (firstW, firstH) = if (source.pageCount > 0) source.pageSize(0) else (1f to 1.414f)
+        val grid = SheetGrid.best(
+            per.n, sheetW.toFloat(), sheetH.toFloat(), margin.toFloat(), gutter.toFloat(),
+            firstW, firstH, canRotate = options.orientation == Orientation.AUTO,
+        )
+        cols = grid.cols
+        rows = grid.rows
         val cw = (sheetW - 2 * margin - (cols - 1) * gutter) / cols
         val ch = (sheetH - 2 * margin - (rows - 1) * gutter) / rows
         cells = (0 until rows).flatMap { r ->
@@ -92,7 +101,7 @@ class SheetComposer(
             )
             val (pw, ph) = source.pageSize(page)
             // Page into its layout cell; for a landscape sheet then turn the cell into raster space.
-            val cellMatrix = Matrix(PageLayout.matrix(pw, ph, c.lw, c.lh, options, dpi, source.unitsPerInch, autoRotate = options.orientation == Orientation.AUTO)).apply {
+            val cellMatrix = Matrix(PageLayout.matrix(pw, ph, c.lw, c.lh, options, dpi, source.unitsPerInch(page), autoRotate = options.orientation == Orientation.AUTO)).apply {
                 if (landscape) {
                     postRotate(-90f)                         // (x, y) -> (y, -x)
                     postTranslate(0f, c.lw.toFloat())        // -> (y, lw - x)
@@ -116,4 +125,6 @@ class SheetComposer(
     }
 
     override fun close() = tmp.recycle()
+
+    private companion object { const val MAX_MARGIN_FRACTION = 0.4f }
 }
