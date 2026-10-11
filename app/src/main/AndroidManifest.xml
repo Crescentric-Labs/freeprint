@@ -29,6 +29,17 @@
                 android:resource="@xml/device_filter" />
         </activity>
 
+        <!-- Lets other apps (the share sheet) read the PDF built from a scan, and nothing else. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <service
             android:name=".printservice.UsbPrintService"
             android:exported="true"
