@@ -290,6 +290,27 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
 
     fun printerAttributes() = withPrinter { NativeIpp.getPrinterAttributes(it) }
 
+    /**
+     * Asks the printer which scanner endpoints it serves (eSCL on the same HTTP-over-USB link as printing, and its
+     * admin page), on each of its two IPP interfaces. The answer decides how scanning can be done.
+     */
+    fun scannerProbe() = withPrinter { fd ->
+        buildString {
+            for (which in 0..1) {
+                HttpSession(fd, which).use { http ->
+                    appendLine("--- interface #$which: ${if (http.isOpen) "claimed" else http.openError}")
+                    if (!http.isOpen) return@use
+                    for (path in listOf("/eSCL/ScannerCapabilities", "/eSCL/ScannerStatus", "/")) {
+                        val r = http.request("GET", path, timeoutMs = 8000)
+                        if (r == null) { appendLine("GET $path -> failed: ${http.lastError.trim()}"); continue }
+                        appendLine("GET $path -> ${r.status} ${r.header("Content-Type").orEmpty()} (${r.body.size} bytes)")
+                        if (r.status == 200) appendLine(r.text.take(1800))
+                    }
+                }
+            }
+        }
+    }
+
     fun printTestPage() {
         val doc = getApplication<Application>().assets.open("test-a4.pwg").use { it.readBytes() }
         withPrinter { NativeIpp.printPwgRaster(it, doc) }
