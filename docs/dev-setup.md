@@ -65,3 +65,17 @@ logs `libusb_wrap_sys_device` or `claim` errors, record the exact error name in 
 3. The first job asks for USB access with the system dialog; allow it. Choosing "Always open Free Print" when
    the printer is plugged in makes that permission stick.
 4. Watch `adb logcat FreePrintNative:I AndroidRuntime:E '*:S'` and `adb shell dumpsys print` for job state.
+
+## Languages (English and Sinhala)
+
+All user-facing text lives in `app/src/main/res/values/strings.xml` (English) and `values-si/strings.xml` (Sinhala).
+Do not edit those two files by hand: they are generated from one table so the languages cannot drift apart.
+Edit `tools/gen_strings.py`, then run `python3 -I tools/gen_strings.py` from the repo root.
+
+- Language button in the top bar: System default, English or සිංහල. The choice is saved in `app_settings` and applied
+  to the activity (`attachBaseContext`) and to the print service's own messages (through a wrapped context, because
+  `PrintService.attachBaseContext` is final). Changing it recreates the activity; the document and options stay.
+- Android 13 and later also list both languages in the system per-app language setting (`locales_config.xml`).
+- Technical detail from the printer layers (for example "write error: LIBUSB_ERROR_TIMEOUT") stays English under a
+  translated headline.
+- Sinhala wording was written without a native reviewer; ask a Sinhala speaker to review before a public release.
