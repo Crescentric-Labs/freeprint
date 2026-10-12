@@ -69,6 +69,29 @@
     <string name="orientation_hint">ස්වයංක්‍රීය මුල් පිටුව අනුගමනය කරයි. තිරස් මාදිලියේදී අන්තර්ගතය වාමාවර්තව අංශක 90කින් කරකැවේ.</string>
     <string name="per_sheet_one_opt">පත්‍රයකට පිටුව 1</string>
     <string name="per_sheet_n_opt">පත්‍රයකට පිටු %1$d</string>
+    <string name="setting_two_sided">දෙපැත්තේම මුද්‍රණය</string>
+    <string name="two_sided_off">අක්‍රියයි (එක් පැත්තක් පමණි)</string>
+    <string name="two_sided_long">අතින්, දිගු කෙළවරින් පෙරළන්න</string>
+    <string name="two_sided_short">අතින්, කෙටි කෙළවරින් පෙරළන්න</string>
+    <string name="sub_two_sided_off">අක්‍රියයි</string>
+    <string name="sub_two_sided_long">අතින්, දිගු කෙළවර</string>
+    <string name="sub_two_sided_short">අතින්, කෙටි කෙළවර</string>
+    <string name="sub_two_sided_reversed">පිටුපස ප්‍රතිවර්ත අනුපිළිවෙලින්</string>
+    <string name="two_sided_reverse">පිටුපස පැති ප්‍රතිවර්ත අනුපිළිවෙලින් මුද්‍රණය කරන්න</string>
+    <string name="two_sided_desc_off">කඩදාසියේ එක් පැත්තක් පමණක් මුද්‍රණය කරන්න.</string>
+    <string name="two_sided_desc_long">දිගු කෙළවර ඔස්සේ බැඳ හෝ පෙරළන පිටු සඳහා, පොතක් මෙන්. ගොඩ පොතක පිටුවක් මෙන් පෙරළන්න; පිටුපස පැති කෙලින් මුද්‍රණය වේ.</string>
+    <string name="two_sided_desc_short">කෙටි කෙළවර ඔස්සේ බැඳ හෝ පෙරළන පිටු සඳහා, සටහන් පොතක් හෝ දින දර්ශනයක් මෙන්. ගොඩ එලෙසම පෙරළන්න; පිටුපස පැති නිවැරදිව කියවීමට ඔබ වෙනුවෙන් යටිකුරු කෙරේ.</string>
+    <string name="two_sided_hint">ස්වයංක්‍රීයව දෙපැත්තේම මුද්‍රණය කළ නොහැකි මුද්‍රණ යන්ත්‍ර සඳහා: මුලින් ඉදිරිපස පැති මුද්‍රණය වේ, ඉන්පසු ගොඩ පෙරළූ විට පිටුපස පැති මුද්‍රණය වේ. කිසිදු තේරීමක් බැඳීම සඳහා අමතර ඉඩක් එක් නොකරයි; ඒ සඳහා මායිම් භාවිතා කරන්න. පිටුපස පැති වැරදි අනුපිළිවෙලකට පැමිණියහොත් ප්‍රතිවර්ත විකල්පය ක්‍රියාත්මක කරන්න.</string>
+    <string name="print_fronts">ඉදිරිපස මුද්‍රණය කරන්න</string>
+    <string name="flip_title">පිටු පෙරළන්න</string>
+    <string name="flip_step_1">තීන්ත වියළීමට මොහොතක් රැඳී සිටින්න.</string>
+    <string name="flip_step_2">මුද්‍රිත පිටු ප්‍රතිදාන තැටියෙන් ගෙන ඒවායේ අනුපිළිවෙල නොවෙනස්ව තබා ගන්න.</string>
+    <string name="flip_step_3">පොතක පිටුවක් පෙරළන්නාක් මෙන් මුළු ගොඩම පෙරළන්න; එවිට හිස් පැති මුද්‍රිත පැති තිබූ දිශාවට හැරේ.</string>
+    <string name="flip_step_4">හිස් කඩදාසි දැමූ ආකාරයටම, එම කෙළවර මුලින් වන සේ, ගොඩ ආදාන තැටියට නැවත දමන්න.</string>
+    <string name="flip_unpaired_remove">අවසාන පත්‍රයට පිටුපස පැත්තක් නැත. එය ගොඩෙන් ඉවත් කර පසෙකින් තබන්න.</string>
+    <string name="flip_unpaired_keep">අවසාන පත්‍රයට පිටුපස පැත්තක් නැත, එබැවින් එය අවසානයේ ඉතිරි වේ.</string>
+    <string name="flip_continue">ඉදිරියට</string>
+    <string name="flip_stop">නවත්වන්න</string>
     <string name="page_order">පිටු අනුපිළිවෙල</string>
     <string name="border_each">සෑම පිටුවක් වටා මායිමක්</string>
     <string name="pages_which">කුමන පිටු</string>
@@ -192,6 +215,14 @@
     <string name="svc_read_failed">ලේඛනය කියවිය නොහැකි විය: %1$s</string>
     <string name="svc_failed">මුද්‍රණය අසාර්ථකයි.</string>
     <string name="svc_printer_desc">USB, ධාවකයක් නොමැති (IPP)</string>
+    <plurals name="fronts_printed">
+        <item quantity="one">ඉදිරිපස %1$d ක් මුද්‍රණය විය.</item>
+        <item quantity="other">ඉදිරිපස %1$d ක් මුද්‍රණය විය.</item>
+    </plurals>
+    <plurals name="backs_next">
+        <item quantity="one">ඊළඟට: පිටුපස %1$d.</item>
+        <item quantity="other">ඊළඟට: පිටුපස %1$d.</item>
+    </plurals>
     <plurals name="scanned_pages">
         <item quantity="one">ස්කෑන් කළ පිටු %1$d</item>
         <item quantity="other">ස්කෑන් කළ පිටු %1$d</item>
