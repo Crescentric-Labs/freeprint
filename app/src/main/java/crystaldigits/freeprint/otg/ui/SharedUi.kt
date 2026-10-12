@@ -128,7 +128,11 @@ internal fun SettingRow(icon: ImageVector, title: String, value: String, onClick
 
 /** Single-choice list: tapping a row picks it. */
 @Composable
-internal fun <T> RadioList(items: List<T>, selected: T, label: @Composable (T) -> String, onPick: (T) -> Unit) {
+internal fun <T> RadioList(
+    items: List<T>, selected: T, label: @Composable (T) -> String,
+    description: (@Composable (T) -> String?)? = null,
+    onPick: (T) -> Unit,
+) {
     Column {
         items.forEach { item ->
             Row(
@@ -140,7 +144,12 @@ internal fun <T> RadioList(items: List<T>, selected: T, label: @Composable (T) -
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 RadioButton(selected = item == selected, onClick = { onPick(item) })
-                Text(label(item), style = MaterialTheme.typography.bodyLarge)
+                Column(Modifier.padding(end = 8.dp)) {
+                    Text(label(item), style = MaterialTheme.typography.bodyLarge)
+                    description?.invoke(item)?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
         }
     }
