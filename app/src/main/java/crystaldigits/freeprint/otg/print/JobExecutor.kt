@@ -11,13 +11,14 @@ object JobExecutor {
 
     fun execute(
         usb: UsbPrinter, device: UsbDevice, source: PageSource, options: PrintOptions, copies: Int = 1,
+        sheets: List<Int>? = null, rotate180: Boolean = false,
         cancelled: () -> Boolean = { false }, progress: (Int, Int) -> Unit = { _, _ -> },
     ): JobState {
         val conn = usb.open(device) ?: return JobState.Failed("Could not open the printer.")
         try {
             PrintSession(conn.fileDescriptor).use { session ->
                 if (!session.isOpen) return JobState.Failed("Printer connection failed: ${session.error}")
-                when (val err = JobRunner.run(source, options, session, copies, cancelled, progress)) {
+                when (val err = JobRunner.run(source, options, session, copies, sheets, rotate180, cancelled, progress)) {
                     null -> {}
                     JobRunner.CANCELLED -> return JobState.Cancelled
                     else -> return JobState.Failed(err)
