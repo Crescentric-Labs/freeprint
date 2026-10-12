@@ -72,6 +72,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -91,8 +92,11 @@ import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PictureAsPdf
@@ -1224,71 +1228,373 @@ private fun SizingControls(vm: PrintViewModel) {
 @Composable
 private fun TwoSidedControls(vm: PrintViewModel) {
     val o = vm.options
-    RadioList(
-        TwoSided.entries, o.twoSided, { stringResource(it.labelRes) },
-        onPick = { vm.updateOptions(o.copy(twoSided = it)) },
-        description = {
-            stringResource(
-                when (it) {
-                    TwoSided.OFF -> R.string.two_sided_desc_off
-                    TwoSided.LONG_EDGE -> R.string.two_sided_desc_long
-                    TwoSided.SHORT_EDGE -> R.string.two_sided_desc_short
-                }
-            )
-        },
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        RadioList(
+            TwoSided.entries, o.twoSided, { stringResource(it.labelRes) },
+            onPick = { vm.updateOptions(o.copy(twoSided = it)) },
+            description = {
+                stringResource(
+                    when (it) {
+                        TwoSided.OFF -> R.string.two_sided_desc_off
+                        TwoSided.LONG_EDGE -> R.string.two_sided_desc_long
+                        TwoSided.SHORT_EDGE -> R.string.two_sided_desc_short
+                    }
+                )
+            },
+        )
+
+        if (o.twoSided != TwoSided.OFF) {
+            AnimatedPaperFlipDemo(o.twoSided)
+
+            HorizontalDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(stringResource(R.string.two_sided_reverse), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Switch(checked = o.reverseBacks, onCheckedChange = { vm.updateOptions(o.copy(reverseBacks = it)) })
+            }
+        }
+        Text(
+            stringResource(R.string.two_sided_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+/** Animated 3D paper demonstration showing how the paper will flip based on the chosen two-sided mode */
+@Composable
+private fun AnimatedPaperFlipDemo(twoSided: TwoSided) {
+    val infiniteTransition = rememberInfiniteTransition(label = "paper_flip_demo")
+    val flipAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 180f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = FastOutSlowInEasing, delayMillis = 500),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "flip_angle"
     )
-    if (o.twoSided != TwoSided.OFF) {
-        HorizontalDivider()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+
+    val isLongEdge = twoSided == TwoSided.LONG_EDGE || twoSided == TwoSided.OFF
+    val isShowingBack = flipAngle > 90f
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(stringResource(R.string.two_sided_reverse), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Switch(checked = o.reverseBacks, onCheckedChange = { vm.updateOptions(o.copy(reverseBacks = it)) })
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    if (isLongEdge) Icons.AutoMirrored.Filled.MenuBook else Icons.Default.FlipToBack,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Text(
+                    if (isLongEdge) "Long-Edge Flip (Book Style)" else "Short-Edge Flip (Notepad Style)",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Box(
+                modifier = Modifier.size(width = 120.dp, height = 80.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(width = 65.dp, height = 76.dp)
+                        .graphicsLayer {
+                            if (isLongEdge) {
+                                rotationY = flipAngle
+                                cameraDistance = 12f * density
+                            } else {
+                                rotationX = flipAngle
+                                cameraDistance = 12f * density
+                            }
+                        }
+                        .shadow(4.dp, RoundedCornerShape(3.dp))
+                        .background(if (isShowingBack) Color(0xFFF1F5F9) else Color.White, RoundedCornerShape(3.dp))
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                if (isShowingBack) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color(0xFFCBD5E1)
+                            ),
+                            RoundedCornerShape(3.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!isShowingBack) {
+                        Column(
+                            modifier = Modifier.padding(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(3.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "SIDE 1",
+                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            repeat(3) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(2.dp)
+                                        .background(Color(0xFF94A3B8), RoundedCornerShape(1.dp))
+                                )
+                            }
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    if (isLongEdge) rotationY = 180f else rotationX = 180f
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(3.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "SIDE 2",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0284C7)
+                                )
+                                repeat(3) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(2.dp)
+                                            .background(Color(0xFF38BDF8), RoundedCornerShape(1.dp))
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Text(
+                if (isLongEdge) "Turns sideways like turning the page of a book" else "Turns end-over-end like flipping a calendar pad",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         }
     }
-    Text(
-        stringResource(R.string.two_sided_hint),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
 }
 
 /**
- * Shown between the two passes of manual two-sided printing. It cannot be dismissed by accident: the user must choose to
- * continue (print the back sides) or stop.
+ * Shown between the two passes of manual two-sided printing. Features the 3D instructional flip guide graphic,
+ * progress summary, and icon-based step-by-step guidance.
  */
 @Composable
 private fun FlipDialog(state: JobState.NeedsFlip, onContinue: () -> Unit, onStop: () -> Unit) {
     AlertDialog(
         onDismissRequest = {},
-        title = { Text(stringResource(R.string.flip_title)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.FlipToBack,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 Text(
-                    pluralStringResource(R.plurals.fronts_printed, state.fronts, state.fronts) + " " +
-                        pluralStringResource(R.plurals.backs_next, state.backs, state.backs),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
+                    stringResource(R.string.flip_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
-                listOf(R.string.flip_step_1, R.string.flip_step_2, R.string.flip_step_3, R.string.flip_step_4).forEachIndexed { i, step ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("${i + 1}.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Text(stringResource(step), style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Instructional 3D illustration banner
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.app_flip_guide_otg),
+                            contentDescription = stringResource(R.string.flip_title),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp),
+                            contentScale = ContentScale.Fit
+                        )
                     }
                 }
+
+                // Fronts printed / backs next summary badge
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            pluralStringResource(R.plurals.fronts_printed, state.fronts, state.fronts) + " • " +
+                                pluralStringResource(R.plurals.backs_next, state.backs, state.backs),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                // Icon-assisted numbered step cards
+                val stepIcons = listOf(
+                    Icons.Default.HourglassTop,
+                    Icons.Default.Layers,
+                    Icons.Default.FlipToBack,
+                    Icons.Default.ArrowDownward
+                )
+                val stepStrings = listOf(
+                    R.string.flip_step_1,
+                    R.string.flip_step_2,
+                    R.string.flip_step_3,
+                    R.string.flip_step_4
+                )
+
+                stepStrings.forEachIndexed { i, stepRes ->
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "${i + 1}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                            Icon(
+                                stepIcons[i],
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                stringResource(stepRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+
+                // Odd sheet warning callout
                 if (state.unpairedLast) {
-                    Text(
-                        stringResource(if (state.reversed) R.string.flip_unpaired_remove else R.string.flip_unpaired_keep),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                stringResource(if (state.reversed) R.string.flip_unpaired_remove else R.string.flip_unpaired_keep),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
                 }
             }
         },
-        confirmButton = { Button(onClick = onContinue) { Text(stringResource(R.string.flip_continue)) } },
-        dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.flip_stop)) } }
+        confirmButton = {
+            Button(
+                onClick = onContinue,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Default.Print, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(stringResource(R.string.flip_continue), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onStop,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text(stringResource(R.string.flip_stop))
+            }
+        }
     )
 }
 
