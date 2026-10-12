@@ -21,6 +21,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import crystaldigits.freeprint.otg.print.CompositeSource
+import crystaldigits.freeprint.otg.print.DuplexPlan
 import crystaldigits.freeprint.otg.print.JobExecutor
 import crystaldigits.freeprint.otg.print.SheetComposer
 import crystaldigits.freeprint.otg.print.PageSource
@@ -41,6 +42,12 @@ sealed interface JobState {
     /** [message] is technical detail (English); [headline] is the localized title, or null for the generic one. */
     data class Failed(val message: String, @StringRes val headline: Int? = null) : JobState
     data object Cancelled : JobState
+
+    /**
+     * Manual two-sided printing: the front sides are done and the user must turn the stack over before the backs print.
+     * [unpairedLast] is true when the final front has no back; [reversed] when the backs print last-to-first.
+     */
+    data class NeedsFlip(val fronts: Int, val backs: Int, val unpairedLast: Boolean, val reversed: Boolean) : JobState
 }
 
 /** State and actions for the print screen. USB and rendering work always runs on Dispatchers.IO. */
@@ -127,7 +134,10 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         thumbVersion++
     }
 
-    val canPrint get() = doc != null && hasPermission && job !is JobState.Printing && selection is PageSelection.Pages
+    val canPrint get() = doc != null && hasPermission && job !is JobState.Printing && job !is JobState.NeedsFlip && selection is PageSelection.Pages
+
+    /** How the sheets split into front and back passes, or null when two-sided printing is off or there is only one side. */
+    val duplexPlan: DuplexPlan? get() = DuplexPlan.of(sheetCount, options.twoSided, options.reverseBacks)
 
     fun refreshPrinter() {
         device = usb.findPrinter()
@@ -256,22 +266,61 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** What the second pass of a two-sided job needs, captured when the first pass starts so nothing changes in between. */
+    private class PendingBacks(val files: List<Doc>, val chosen: List<Int>, val options: PrintOptions, val plan: DuplexPlan, val device: UsbDevice)
+    private var pendingBacks: PendingBacks? = null
+
+    /** Prints the document. With two-sided printing on, only the front sides print now and [job] becomes [JobState.NeedsFlip]. */
     fun print() {
         val fs = files.takeIf { it.isNotEmpty() } ?: return
         val dev = device ?: return
         val opts = options
         val chosen = (selection as? PageSelection.Pages)?.indices ?: return
+        val plan = duplexPlan
+        pendingBacks = null
+        if (plan == null) {
+            runJob(fs, chosen, opts, dev, sheets = null, rotate180 = false) { it }
+        } else {
+            runJob(fs, chosen, opts, dev, plan.fronts, rotate180 = false) { result ->
+                if (result is JobState.Done) {
+                    pendingBacks = PendingBacks(fs, chosen, opts, plan, dev)
+                    JobState.NeedsFlip(plan.fronts.size, plan.backs.size, plan.unpairedLast, plan.reversed)
+                } else result
+            }
+        }
+    }
+
+    /** The user has turned the stack over: print the back sides, turned half a turn when flipping on the short edge. */
+    fun continueTwoSided() {
+        val p = pendingBacks ?: return
+        pendingBacks = null
+        runJob(p.files, p.chosen, p.options, p.device, p.plan.backs, p.plan.rotateBacks) { it }
+    }
+
+    /** Gives up on the back sides; the printed fronts stay with the user. */
+    fun cancelTwoSided() {
+        pendingBacks = null
+        job = JobState.Idle
+    }
+
+    /** Streams [sheets] (null for all) of the chosen pages to the printer and publishes the outcome through [finish]. */
+    private fun runJob(
+        fs: List<Doc>, chosen: List<Int>, opts: PrintOptions, dev: UsbDevice,
+        sheets: List<Int>?, rotate180: Boolean, finish: (JobState) -> JobState,
+    ) {
         val ctx = getApplication<Application>()
-        job = JobState.Printing(0, sheetCount)
+        job = JobState.Printing(0, sheets?.size ?: sheetCount)
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     CompositeSource.open(ctx, fs.map { it.uri to it.mime }).use { src ->
-                        JobExecutor.execute(usb, dev, SelectedPages(src, chosen), opts) { p, n -> job = JobState.Printing(p, n) }
+                        JobExecutor.execute(usb, dev, SelectedPages(src, chosen), opts, sheets = sheets, rotate180 = rotate180) { p, n ->
+                            job = JobState.Printing(p, n)
+                        }
                     }
                 }.getOrElse { JobState.Failed(it.message.orEmpty()) }
             }
-            job = result
+            job = finish(result)
         }
     }
 
