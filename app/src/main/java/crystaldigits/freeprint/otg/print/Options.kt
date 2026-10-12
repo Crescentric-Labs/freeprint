@@ -44,6 +44,14 @@ enum class Orientation(@StringRes val labelRes: Int) {
     AUTO(R.string.orient_auto), PORTRAIT(R.string.orient_portrait), LANDSCAPE(R.string.orient_landscape)
 }
 
+/**
+ * Printing on both sides when the printer cannot do it itself: the front sides print, the user turns the stack over, then the
+ * backs print. Long edge flips like a book page (backs upright); short edge like a notepad (backs turned 180 degrees).
+ */
+enum class TwoSided(@StringRes val labelRes: Int) {
+    OFF(R.string.two_sided_off), LONG_EDGE(R.string.two_sided_long), SHORT_EDGE(R.string.two_sided_short)
+}
+
 enum class PageOrder(@StringRes val labelRes: Int) { ACROSS(R.string.order_across), DOWN(R.string.order_down) }
 
 data class PrintOptions(
@@ -62,6 +70,9 @@ data class PrintOptions(
     val orientation: Orientation = Orientation.AUTO,
     val perSheet: PerSheet = PerSheet.ONE,
     val order: PageOrder = PageOrder.ACROSS,
+    val twoSided: TwoSided = TwoSided.OFF,
+    /** Print the back sides last-to-first, for printers that stack or pick paper the other way round. */
+    val reverseBacks: Boolean = false,
     /** Hairline around each page when several share a sheet. */
     val border: Boolean = false,
 )
