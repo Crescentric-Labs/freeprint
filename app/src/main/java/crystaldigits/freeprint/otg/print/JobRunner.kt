@@ -1,6 +1,8 @@
 package crystaldigits.freeprint.otg.print
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import crystaldigits.freeprint.otg.PrintSession
 import java.nio.ByteBuffer
 import kotlin.math.min
@@ -16,11 +18,15 @@ object JobRunner {
     const val CANCELLED = "cancelled"
 
     /**
-     * Returns null on success, [CANCELLED], or a short error message. [progress] gets (sheet, sheetCount).
+     * Returns null on success, [CANCELLED], or a short error message. [progress] gets (position in this job, sheets in this job).
      * [cancelled] is checked before every band; a cancelled job is simply abandoned mid-stream.
+     *
+     * [sheets] picks which sheets to print and in what order (0-based); null means all, in order. [rotate180] turns every
+     * printed sheet half a turn, used for the backs of two-sided pages that are flipped on the short edge.
      */
     fun run(
         source: PageSource, options: PrintOptions, session: PrintSession, copies: Int = 1,
+        sheets: List<Int>? = null, rotate180: Boolean = false,
         cancelled: () -> Boolean = { false }, progress: (Int, Int) -> Unit = { _, _ -> },
     ): String? {
         val paper = options.paper
@@ -28,20 +34,30 @@ object JobRunner {
         if (!session.beginJob(options.color, paper.media, options.quality.ipp, copies)) return "Could not start the job: ${session.error}"
 
         val bitmap = Bitmap.createBitmap(paper.widthPx, BAND_ROWS, Bitmap.Config.ARGB_8888)
+        val turned = if (rotate180) Bitmap.createBitmap(paper.widthPx, BAND_ROWS, Bitmap.Config.ARGB_8888) else null
         val buffer = ByteBuffer.allocateDirect(paper.widthPx * BAND_ROWS * 4)
         SheetComposer(source, options, 1f, BAND_ROWS).use { composer ->
             try {
-                for (sheet in 0 until composer.sheetCount) {
-                    progress(sheet + 1, composer.sheetCount)
+                val order = sheets ?: (0 until composer.sheetCount).toList()
+                for ((position, sheet) in order.withIndex()) {
+                    progress(position + 1, order.size)
                     if (!session.beginPage(paper.widthPx, paper.heightPx, PRINT_DPI, paper.widthPt, paper.heightPt))
                         return "Could not start sheet ${sheet + 1}: ${session.error}"
                     var top = 0
                     while (top < paper.heightPx) {
                         if (cancelled()) return CANCELLED
                         val rows = min(BAND_ROWS, paper.heightPx - top)
-                        composer.renderRows(sheet, top, rows, bitmap)
+                        val band = if (turned == null) {
+                            composer.renderRows(sheet, top, rows, bitmap)
+                            bitmap
+                        } else {
+                            // The bottom of the sheet comes first when it is turned half a turn, and each strip is itself turned.
+                            composer.renderRows(sheet, paper.heightPx - top - rows, rows, bitmap)
+                            rotateHalfTurn(bitmap, turned, rows)
+                            turned
+                        }
                         buffer.clear()
-                        bitmap.copyPixelsToBuffer(buffer)
+                        band.copyPixelsToBuffer(buffer)
                         if (!session.addBand(buffer, rows)) return "Sending sheet ${sheet + 1} failed at row $top: ${session.error}"
                         top += rows
                     }
@@ -49,8 +65,19 @@ object JobRunner {
                 }
             } finally {
                 bitmap.recycle()
+                turned?.recycle()
             }
         }
         return null
+    }
+
+    /** Copies the first [rows] rows of [from] into [to], turned half a turn about the middle of that strip. */
+    private fun rotateHalfTurn(from: Bitmap, to: Bitmap, rows: Int) {
+        val canvas = Canvas(to)
+        canvas.drawColor(Color.WHITE)
+        canvas.save()
+        canvas.rotate(180f, from.width / 2f, rows / 2f)
+        canvas.drawBitmap(from, 0f, 0f, null)
+        canvas.restore()
     }
 }
