@@ -69,6 +69,29 @@
     <string name="orientation_hint">Auto follows the first page. Landscape turns the content a quarter turn counter-clockwise.</string>
     <string name="per_sheet_one_opt">1 page per sheet</string>
     <string name="per_sheet_n_opt">%1$d pages per sheet</string>
+    <string name="setting_two_sided">Two-sided printing</string>
+    <string name="two_sided_off">Off (one side only)</string>
+    <string name="two_sided_long">Manual, flip on the long edge</string>
+    <string name="two_sided_short">Manual, flip on the short edge</string>
+    <string name="sub_two_sided_off">Off</string>
+    <string name="sub_two_sided_long">Manual, long edge</string>
+    <string name="sub_two_sided_short">Manual, short edge</string>
+    <string name="sub_two_sided_reversed">backs in reverse order</string>
+    <string name="two_sided_reverse">Print the back sides in reverse order</string>
+    <string name="two_sided_desc_off">Print on one side of the paper only.</string>
+    <string name="two_sided_desc_long">For pages bound or flipped along the long edge, like a book. Turn the stack over like a book page; the backs print upright.</string>
+    <string name="two_sided_desc_short">For pages bound or flipped along the short edge, like a notepad or calendar. Turn the stack over the same way; the backs are turned upside down for you so they read correctly.</string>
+    <string name="two_sided_hint">For printers that cannot print on both sides by themselves: the front sides print first, then you turn the stack over and the back sides print. Neither choice adds extra space for binding; use Margins for that. If the backs come out in the wrong order, switch on the reverse option.</string>
+    <string name="print_fronts">Print front sides</string>
+    <string name="flip_title">Turn the pages over</string>
+    <string name="flip_step_1">Wait a moment so the ink can dry.</string>
+    <string name="flip_step_2">Take the printed pages out of the output tray and keep them in the same order.</string>
+    <string name="flip_step_3">Turn the whole stack over like turning a page of a book, so the blank sides face where the printed sides faced.</string>
+    <string name="flip_step_4">Put the stack back in the input tray the same way you loaded the blank paper, with the same edge first.</string>
+    <string name="flip_unpaired_remove">The last sheet has no back side. Take it out of the stack and put it aside.</string>
+    <string name="flip_unpaired_keep">The last sheet has no back side, so it is left over at the end.</string>
+    <string name="flip_continue">Continue</string>
+    <string name="flip_stop">Stop</string>
     <string name="page_order">Page order</string>
     <string name="border_each">Border around each page</string>
     <string name="pages_which">Which pages</string>
@@ -192,6 +215,14 @@
     <string name="svc_read_failed">Could not read the document: %1$s</string>
     <string name="svc_failed">Printing failed.</string>
     <string name="svc_printer_desc">USB, driverless (IPP)</string>
+    <plurals name="fronts_printed">
+        <item quantity="one">%1$d front side printed.</item>
+        <item quantity="other">%1$d front sides printed.</item>
+    </plurals>
+    <plurals name="backs_next">
+        <item quantity="one">Next: %1$d back side.</item>
+        <item quantity="other">Next: %1$d back sides.</item>
+    </plurals>
     <plurals name="scanned_pages">
         <item quantity="one">%1$d scanned page</item>
         <item quantity="other">%1$d scanned pages</item>
