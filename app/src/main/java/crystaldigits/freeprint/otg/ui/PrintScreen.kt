@@ -29,6 +29,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.DocumentScanner
 import crystaldigits.freeprint.otg.print.effectiveMarginMm
 import androidx.compose.foundation.Image
@@ -187,6 +188,7 @@ import crystaldigits.freeprint.otg.print.Paper
 import crystaldigits.freeprint.otg.print.Parity
 import crystaldigits.freeprint.otg.print.PerSheet
 import crystaldigits.freeprint.otg.print.Quality
+import crystaldigits.freeprint.otg.print.TwoSided
 
 
 private enum class PrinterStatusType {
@@ -331,6 +333,7 @@ fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}) {
         }
 
         if (showLanguageDialog) LanguageDialog { showLanguageDialog = false }
+        (vm.job as? JobState.NeedsFlip)?.let { FlipDialog(it, onContinue = vm::continueTwoSided, onStop = vm::cancelTwoSided) }
 
         if (showDiagnosticsSheet) {
             DiagnosticsBottomSheet(
@@ -1009,6 +1012,7 @@ private enum class Setting(@StringRes val titleRes: Int, val icon: ImageVector) 
     ORIENTATION(R.string.setting_orientation, Icons.Default.ScreenRotation),
     PAGES(R.string.setting_pages, Icons.Default.FormatListNumbered),
     PER_SHEET(R.string.setting_per_sheet, Icons.Default.GridView),
+    TWO_SIDED(R.string.setting_two_sided, Icons.Default.FlipToBack),
     SIZING(R.string.setting_sizing, Icons.Default.FitScreen),
     MARGINS(R.string.setting_margins, Icons.Default.Crop),
     POSITION(R.string.setting_position, Icons.Default.OpenWith),
@@ -1045,6 +1049,11 @@ private fun subtitle(vm: PrintViewModel, setting: Setting): String {
             if (o.perSheet == PerSheet.ONE) stringResource(R.string.sub_per_sheet_one)
             else stringResource(R.string.sub_per_sheet_n, o.perSheet.n, stringResource(o.order.labelRes)) +
                 if (o.border) ", " + stringResource(R.string.sub_with_borders) else ""
+        Setting.TWO_SIDED -> when (o.twoSided) {
+            TwoSided.OFF -> stringResource(R.string.sub_two_sided_off)
+            else -> stringResource(if (o.twoSided == TwoSided.LONG_EDGE) R.string.sub_two_sided_long else R.string.sub_two_sided_short) +
+                if (o.reverseBacks) ", " + stringResource(R.string.sub_two_sided_reversed) else ""
+        }
         Setting.SIZING -> stringResource(R.string.sub_sizing, stringResource(o.fit.labelRes), o.scalePercent)
         Setting.MARGINS -> when (o.marginMm) {
             null -> stringResource(R.string.margin_auto)
@@ -1149,6 +1158,7 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
                         }
                     }
 
+                    Setting.TWO_SIDED -> TwoSidedControls(vm)
                     Setting.SIZING -> SizingControls(vm)
                     Setting.MARGINS -> MarginControls(vm)
                     Setting.POSITION -> PositionControls(vm)
@@ -1209,6 +1219,77 @@ private fun SizingControls(vm: PrintViewModel) {
             )
         }
     }
+}
+
+@Composable
+private fun TwoSidedControls(vm: PrintViewModel) {
+    val o = vm.options
+    RadioList(
+        TwoSided.entries, o.twoSided, { stringResource(it.labelRes) },
+        onPick = { vm.updateOptions(o.copy(twoSided = it)) },
+        description = {
+            stringResource(
+                when (it) {
+                    TwoSided.OFF -> R.string.two_sided_desc_off
+                    TwoSided.LONG_EDGE -> R.string.two_sided_desc_long
+                    TwoSided.SHORT_EDGE -> R.string.two_sided_desc_short
+                }
+            )
+        },
+    )
+    if (o.twoSided != TwoSided.OFF) {
+        HorizontalDivider()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(stringResource(R.string.two_sided_reverse), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Switch(checked = o.reverseBacks, onCheckedChange = { vm.updateOptions(o.copy(reverseBacks = it)) })
+        }
+    }
+    Text(
+        stringResource(R.string.two_sided_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+/**
+ * Shown between the two passes of manual two-sided printing. It cannot be dismissed by accident: the user must choose to
+ * continue (print the back sides) or stop.
+ */
+@Composable
+private fun FlipDialog(state: JobState.NeedsFlip, onContinue: () -> Unit, onStop: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = {},
+        title = { Text(stringResource(R.string.flip_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    pluralStringResource(R.plurals.fronts_printed, state.fronts, state.fronts) + " " +
+                        pluralStringResource(R.plurals.backs_next, state.backs, state.backs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                listOf(R.string.flip_step_1, R.string.flip_step_2, R.string.flip_step_3, R.string.flip_step_4).forEachIndexed { i, step ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("${i + 1}.", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(step), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                if (state.unpairedLast) {
+                    Text(
+                        stringResource(if (state.reversed) R.string.flip_unpaired_remove else R.string.flip_unpaired_keep),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        },
+        confirmButton = { Button(onClick = onContinue) { Text(stringResource(R.string.flip_continue)) } },
+        dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.flip_stop)) } }
+    )
 }
 
 @Composable
@@ -1445,7 +1526,7 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                     Icon(Icons.Default.Print, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        stringResource(if (job is JobState.Printing) R.string.printing_button else R.string.print_button),
+                        stringResource(if (job is JobState.Printing) R.string.printing_button else if (vm.duplexPlan != null) R.string.print_fronts else R.string.print_button),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
