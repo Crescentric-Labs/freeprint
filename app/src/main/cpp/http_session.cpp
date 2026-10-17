@@ -170,7 +170,7 @@ HttpSession *S(jlong h) { return reinterpret_cast<HttpSession *>(h); }
 
 }  // namespace
 
-#define JNI(ret, name) extern "C" JNIEXPORT ret JNICALL Java_crystaldigits_freeprint_otg_HttpSession_##name
+#define JNI(ret, name) extern "C" JNIEXPORT ret JNICALL Java_crescentric_freeprint_otg_HttpSession_##name
 
 JNI(jlong, nativeOpen)(JNIEnv *, jobject, jint fd, jint which) {
     auto *s = new HttpSession();
