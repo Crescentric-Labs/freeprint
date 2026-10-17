@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.scan
+package crescentric.freeprint.otg.scan
 
 import android.app.Application
 import android.graphics.BitmapFactory
@@ -9,10 +9,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import crystaldigits.freeprint.otg.HttpSession
-import crystaldigits.freeprint.otg.R
-import crystaldigits.freeprint.otg.UsbPrinter
-import crystaldigits.freeprint.otg.UsbWatcher
+import crescentric.freeprint.otg.HttpSession
+import crescentric.freeprint.otg.R
+import crescentric.freeprint.otg.UsbPrinter
+import crescentric.freeprint.otg.UsbWatcher
 import android.graphics.Bitmap
 import androidx.compose.runtime.mutableIntStateOf
 import kotlinx.coroutines.Dispatchers
@@ -43,11 +43,19 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     var message by mutableStateOf<ScanMessage?>(null); private set
     var saved by mutableStateOf(false); private set
 
+    /** Pages deleted with the strip or the delete button, kept on disk so they can be restored until the pages are cleared. */
+    private val trash = PageTrash<ScanPage>()
+    var deletedCount by mutableIntStateOf(0); private set
+
+    /** Bumped when the user moves to another page or a page is added, so the strip centres it; not bumped when one is deleted. */
+    var pageScrollTick by mutableIntStateOf(0); private set
+
     /** The page shown in the preview, as an index into [pages]. */
     var pageIndex by mutableIntStateOf(0); private set
     var preview by mutableStateOf<ScanPreviewImage?>(null); private set
     /** Larger picture for the full-screen viewer; null while it is closed. */
-    var largePreview by mutableStateOf<Bitmap?>(null); private set
+    var largeImage by mutableStateOf<ScanPreviewImage?>(null); private set
+    val largePreview: Bitmap? get() = largeImage?.bitmap
     private var largeOpen = false
     private var previewJob: Job? = null
 
@@ -115,20 +123,39 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             scanning = false
-            result.onSuccess { pages = pages + it; pageIndex = pages.lastIndex; renderPreview() }.onFailure { message = messageFor(it) }
+            result.onSuccess { pages = pages + it; pageIndex = pages.lastIndex; pageScrollTick++; renderPreview() }.onFailure { message = messageFor(it) }
         }
     }
 
+    /** The user moves to another page: show it and centre it in the strip. */
     fun selectPage(index: Int) {
+        pageScrollTick++
+        showPage(index)
+    }
+
+    private fun showPage(index: Int) {
         pageIndex = index.coerceIn(0, (pages.size - 1).coerceAtLeast(0))
         renderPreview()
     }
 
+    /** Takes a page out of the list. Its file is kept, so [restorePages] can bring it back, until [clearPages]. */
     fun removePage(index: Int) {
-        pages.getOrNull(index)?.file?.delete()
+        val page = pages.getOrNull(index) ?: return
+        trash.add(index, page)
+        deletedCount = trash.size
         pages = pages.filterIndexed { i, _ -> i != index }
         saved = false
-        selectPage(if (index <= pageIndex) pageIndex - 1 else pageIndex)
+        showPage(if (index <= pageIndex) pageIndex - 1 else pageIndex)
+    }
+
+    /** Puts every deleted page back where it was. */
+    fun restorePages() {
+        if (trash.isEmpty) return
+        pages = trash.restoreInto(pages)
+        trash.clear()
+        deletedCount = 0
+        saved = false
+        showPage(pageIndex)
     }
 
     /** Moves a page earlier (-1) or later (+1); the preview follows it. */
@@ -136,35 +163,37 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         val to = index + delta
         if (index !in pages.indices || to !in pages.indices) return
         pages = pages.toMutableList().apply { add(to, removeAt(index)) }
-        selectPage(to)
+        showPage(to)
     }
 
     fun clearPages() {
-        pages.forEach { it.file.delete() }
+        (pages + trash.all()).forEach { it.file.delete() }
+        trash.clear()
+        deletedCount = 0
         pages = emptyList()
         saved = false
         pageIndex = 0
         preview = null
-        largePreview = null
+        largeImage = null
     }
 
     /** Opens or closes the full-screen viewer; while it is open the larger picture is kept up to date. */
     fun setLargePreviewOpen(open: Boolean) {
         largeOpen = open
-        if (!open) largePreview = null
+        if (!open) largeImage = null
         renderPreview()
     }
 
     /** Decodes the current page for the preview (or the viewer), at the size that is actually shown. */
     private fun renderPreview() {
         val page = pages.getOrNull(pageIndex)
-        if (page == null) { preview = null; largePreview = null; return }
+        if (page == null) { preview = null; largeImage = null; return }
         val index = pageIndex
         val large = largeOpen
         previewJob?.cancel()
         previewJob = viewModelScope.launch(Dispatchers.IO) {
             val bmp = decode(page.file, if (large) LARGE_SIDE else PREVIEW_SIDE) ?: return@launch
-            if (large) largePreview = bmp else preview = ScanPreviewImage(index, bmp)
+            if (large) largeImage = ScanPreviewImage(index, bmp) else preview = ScanPreviewImage(index, bmp)
         }
     }
 
