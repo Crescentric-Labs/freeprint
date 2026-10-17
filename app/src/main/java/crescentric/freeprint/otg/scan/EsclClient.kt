@@ -1,8 +1,8 @@
-package crystaldigits.freeprint.otg.scan
+package crescentric.freeprint.otg.scan
 
 import androidx.annotation.StringRes
-import crystaldigits.freeprint.otg.HttpSession
-import crystaldigits.freeprint.otg.R
+import crescentric.freeprint.otg.HttpSession
+import crescentric.freeprint.otg.R
 
 /** A scan problem shown to the user: a translated headline plus optional technical detail (English). */
 class ScanMessage(@StringRes val res: Int, val args: List<Any> = emptyList(), val detail: String = "")
