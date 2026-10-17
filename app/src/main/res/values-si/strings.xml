@@ -222,6 +222,10 @@
     <string name="svc_read_failed">ලේඛනය කියවිය නොහැකි විය: %1$s</string>
     <string name="svc_failed">මුද්‍රණය අසාර්ථකයි.</string>
     <string name="svc_printer_desc">USB, ධාවකයක් නොමැති (IPP)</string>
+    <plurals name="restore_pages">
+        <item quantity="one">පිටු %1$d ක් යළි පිහිටුවන්න</item>
+        <item quantity="other">පිටු %1$d ක් යළි පිහිටුවන්න</item>
+    </plurals>
     <plurals name="fronts_printed">
         <item quantity="one">ඉදිරිපස %1$d ක් මුද්‍රණය විය.</item>
         <item quantity="other">ඉදිරිපස %1$d ක් මුද්‍රණය විය.</item>
