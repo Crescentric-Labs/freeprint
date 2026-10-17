@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.printservice
+package crescentric.freeprint.otg.printservice
 
 import android.os.Handler
 import android.os.Looper
@@ -7,15 +7,15 @@ import android.print.PrintJobId
 import android.printservice.PrintJob
 import android.printservice.PrintService
 import android.printservice.PrinterDiscoverySession
-import crystaldigits.freeprint.otg.AppLocale
-import crystaldigits.freeprint.otg.JobState
-import crystaldigits.freeprint.otg.R
-import crystaldigits.freeprint.otg.UsbPrinter
-import crystaldigits.freeprint.otg.print.FitMode
-import crystaldigits.freeprint.otg.print.JobExecutor
-import crystaldigits.freeprint.otg.print.Orientation
-import crystaldigits.freeprint.otg.print.PdfSource
-import crystaldigits.freeprint.otg.print.PrintOptions
+import crescentric.freeprint.otg.AppLocale
+import crescentric.freeprint.otg.JobState
+import crescentric.freeprint.otg.R
+import crescentric.freeprint.otg.UsbPrinter
+import crescentric.freeprint.otg.print.FitMode
+import crescentric.freeprint.otg.print.JobExecutor
+import crescentric.freeprint.otg.print.Orientation
+import crescentric.freeprint.otg.print.PdfSource
+import crescentric.freeprint.otg.print.PrintOptions
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
