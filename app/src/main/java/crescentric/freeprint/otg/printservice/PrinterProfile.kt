@@ -1,11 +1,11 @@
-package crystaldigits.freeprint.otg.printservice
+package crescentric.freeprint.otg.printservice
 
 import android.print.PrintAttributes
 import android.print.PrintAttributes.MediaSize
 import android.print.PrintAttributes.Resolution
 import android.print.PrinterCapabilitiesInfo
 import android.print.PrinterId
-import crystaldigits.freeprint.otg.print.Paper
+import crescentric.freeprint.otg.print.Paper
 import kotlin.math.abs
 
 /** What the print framework is told about the USB printer, and how its job attributes map back to ours. */
