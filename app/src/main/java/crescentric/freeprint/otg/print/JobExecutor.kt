@@ -1,9 +1,9 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 import android.hardware.usb.UsbDevice
-import crystaldigits.freeprint.otg.JobState
-import crystaldigits.freeprint.otg.PrintSession
-import crystaldigits.freeprint.otg.UsbPrinter
+import crescentric.freeprint.otg.JobState
+import crescentric.freeprint.otg.PrintSession
+import crescentric.freeprint.otg.UsbPrinter
 
 /** Runs one complete job against a USB printer: open, stream, finish, check the printer's verdict. Blocking. */
 object JobExecutor {
