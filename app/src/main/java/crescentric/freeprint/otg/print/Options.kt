@@ -10,6 +10,11 @@ enum class Paper(val label: String, val media: String, val widthPt: Int, val hei
     A5("A5", "iso_a5_148x210mm", 420, 595, 3496, 4961),
     LEGAL("Legal", "na_legal_8.5x14in", 612, 1008, 5100, 8400),
     INDEX_4X6("4 x 6 in", "na_index-4x6_4x6in", 288, 432, 2400, 3600),
+    A6("A6", "iso_a6_105x148mm", 298, 420, 2480, 3496),
+    B5("B5", "iso_b5_176x250mm", 499, 709, 4157, 5906),
+    EXECUTIVE("Executive", "na_executive_7.25x10.5in", 522, 756, 4350, 6300),
+    PHOTO_5X7("5 x 7 in", "na_5x7_5x7in", 360, 504, 3000, 4200),
+    PHOTO_8X10("8 x 10 in", "na_govt-letter_8x10in", 576, 720, 4800, 6000),
 }
 
 /** IPP `print-quality` values: 3 draft, 4 normal, 5 high. */
