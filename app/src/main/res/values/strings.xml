@@ -83,6 +83,12 @@
     <string name="two_sided_desc_short">For pages bound or flipped along the short edge, like a notepad or calendar. Turn the stack over the same way; the backs are turned upside down for you so they read correctly.</string>
     <string name="two_sided_hint">For printers that cannot print on both sides by themselves: the front sides print first, then you turn the stack over and the back sides print. Neither choice adds extra space for binding; use Margins for that. If the backs come out in the wrong order, switch on the reverse option.</string>
     <string name="print_fronts">Print front sides</string>
+    <string name="flip_demo_long">Long edge (book style)</string>
+    <string name="flip_demo_short">Short edge (notepad style)</string>
+    <string name="flip_demo_side_1">SIDE 1</string>
+    <string name="flip_demo_side_2">SIDE 2</string>
+    <string name="flip_demo_long_hint">Turns sideways, like turning the page of a book</string>
+    <string name="flip_demo_short_hint">Turns end over end, like flipping a calendar pad</string>
     <string name="flip_title">Turn the pages over</string>
     <string name="flip_step_1">Wait a moment so the ink can dry.</string>
     <string name="flip_step_2">Take the printed pages out of the output tray and keep them in the same order.</string>
@@ -156,6 +162,7 @@
     <string name="scan_output_title">Save or print</string>
     <string name="cd_page_earlier">Move page earlier</string>
     <string name="cd_page_later">Move page later</string>
+    <string name="cd_remove_from_print">Remove from print</string>
     <string name="cd_delete_page">Delete page</string>
     <string name="scan_save_pdf">Save PDF</string>
     <string name="scan_share">Share</string>
