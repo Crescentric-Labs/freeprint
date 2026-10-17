@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.printservice
+package crescentric.freeprint.otg.printservice
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -9,8 +9,8 @@ import android.print.PrinterId
 import android.print.PrinterInfo
 import android.printservice.PrinterDiscoverySession
 import androidx.core.content.ContextCompat
-import crystaldigits.freeprint.otg.R
-import crystaldigits.freeprint.otg.UsbPrinter
+import crescentric.freeprint.otg.R
+import crescentric.freeprint.otg.UsbPrinter
 
 /** Tells the print framework whether a USB printer is attached, and keeps that current as it is plugged in or out. */
 class UsbDiscoverySession(private val service: UsbPrintService) : PrinterDiscoverySession() {
