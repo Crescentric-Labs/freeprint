@@ -1303,7 +1303,7 @@ private fun AnimatedPaperFlipDemo(twoSided: TwoSided) {
                     modifier = Modifier.size(16.dp)
                 )
                 Text(
-                    if (isLongEdge) "Long-Edge Flip (Book Style)" else "Short-Edge Flip (Notepad Style)",
+                    stringResource(if (isLongEdge) R.string.flip_demo_long else R.string.flip_demo_short),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -1344,7 +1344,7 @@ private fun AnimatedPaperFlipDemo(twoSided: TwoSided) {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "SIDE 1",
+                                stringResource(R.string.flip_demo_side_1),
                                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -1373,7 +1373,7 @@ private fun AnimatedPaperFlipDemo(twoSided: TwoSided) {
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "SIDE 2",
+                                    stringResource(R.string.flip_demo_side_2),
                                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0284C7)
@@ -1393,7 +1393,7 @@ private fun AnimatedPaperFlipDemo(twoSided: TwoSided) {
             }
 
             Text(
-                if (isLongEdge) "Turns sideways like turning the page of a book" else "Turns end-over-end like flipping a calendar pad",
+                stringResource(if (isLongEdge) R.string.flip_demo_long_hint else R.string.flip_demo_short_hint),
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -1461,6 +1461,9 @@ private fun FlipDialog(state: JobState.NeedsFlip, onContinue: () -> Unit, onStop
                         )
                     }
                 }
+
+                // The same looping paper as in the settings popup, for the edge that was chosen
+                AnimatedPaperFlipDemo(state.twoSided)
 
                 // Fronts printed / backs next summary badge
                 Surface(
@@ -2021,6 +2024,9 @@ private fun SheetStrip(vm: PrintViewModel, onDark: Boolean = false) {
         },
         onDark = onDark,
         grayscale = !vm.options.color,
+        // No delete in the full-screen viewer, where a stray tap while zooming would be easy.
+        onDelete = if (onDark) null else { i -> vm.removeSheet(i) },
+        deleteDescription = { stringResource(R.string.cd_remove_from_print) },
     )
 }
 
