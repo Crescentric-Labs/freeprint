@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
