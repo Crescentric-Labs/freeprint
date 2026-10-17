@@ -49,7 +49,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -486,13 +486,13 @@ internal fun ZoomableViewer(
     }
 }
 
-/** A small tonal button that puts back pages that were removed: "Restore 3 pages". Replaces nothing when there is nothing to restore. */
+/** A small text button that puts back pages that were removed: "Restore 3 pages". Replaces nothing when there is nothing to restore. */
 @Composable
 internal fun RestoreButton(count: Int, onClick: () -> Unit) {
-    FilledTonalButton(
+    TextButton(
         onClick = onClick,
         shape = RoundedCornerShape(10.dp),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        contentPadding = PaddingValues(start = 8.dp, end = 0.dp, top = 4.dp, bottom = 4.dp),
         modifier = Modifier.height(32.dp)
     ) {
         Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
