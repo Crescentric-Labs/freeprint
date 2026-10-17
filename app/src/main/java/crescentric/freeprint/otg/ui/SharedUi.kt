@@ -1,5 +1,15 @@
-package crystaldigits.freeprint.otg.ui
+package crescentric.freeprint.otg.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -17,6 +27,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +47,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,9 +57,11 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,12 +75,16 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,7 +92,9 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import crystaldigits.freeprint.otg.R
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.core.view.WindowCompat
+import crescentric.freeprint.otg.R
 
 /*
  * Pieces used by both the print screen and the scan screen, so the two look and behave the same: settings rows, the
@@ -81,6 +103,25 @@ import crystaldigits.freeprint.otg.R
  */
 
 internal const val SWIPE_DISTANCE_PX = 90f
+
+/**
+ * How one page gives way to another in every preview: a later page slides in from the right, an earlier one from the left,
+ * and a new picture of the same page (an option changed, or a sharper render arrived) just cross-fades. [from] and [to] are the
+ * page numbers of the picture leaving and the one arriving; null means there was none.
+ */
+internal fun pageFlipTransition(from: Int?, to: Int?): ContentTransform {
+    val slide = tween<IntOffset>(280, easing = FastOutSlowInEasing)
+    val (enter, exit) = when {
+        from == null || to == null -> fadeIn(tween(200)) to fadeOut(tween(200))
+        to > from -> (slideInHorizontally(slide) { w -> w } + fadeIn(tween(250))) to (slideOutHorizontally(slide) { w -> -w } + fadeOut(tween(200)))
+        to < from -> (slideInHorizontally(slide) { w -> -w } + fadeIn(tween(250))) to (slideOutHorizontally(slide) { w -> w } + fadeOut(tween(200)))
+        else -> fadeIn(tween(220)) to fadeOut(tween(220))
+    }
+    return ContentTransform(targetContentEnter = enter, initialContentExit = exit, sizeTransform = SizeTransform(clip = false))
+}
+
+/** A picture for the full-screen viewer together with the page number it shows, so the viewer can slide the right way. */
+internal class ViewerImage(val index: Int, val bitmap: ImageBitmap)
 
 /** Horizontal swipe on this element moves to the previous or next item. */
 internal fun Modifier.swipeToChangeSheet(current: Int, count: Int, onSelect: (Int) -> Unit): Modifier =
@@ -157,6 +198,23 @@ internal fun <T> RadioList(
     }
 }
 
+/**
+ * [accent] itself when it is bright enough to read on a black background, otherwise the same colour mixed towards white until it
+ * is, so the highlight keeps its hue instead of turning plain white.
+ */
+internal fun readableOnDark(accent: Color): Color {
+    var c = accent
+    var step = 0
+    while (c.luminance() < MIN_LUMINANCE_ON_DARK && step < 10) {
+        c = lerp(c, Color.White, 0.12f)
+        step++
+    }
+    return c
+}
+
+/** Luminance (0 black to 1 white) an accent needs to stand out on the viewer's near-black background. */
+internal const val MIN_LUMINANCE_ON_DARK = 0.22f
+
 private val GRAY_FILTER get() = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 /**
@@ -177,15 +235,20 @@ internal fun ThumbStrip(
     grayscale: Boolean = false,
     onDelete: ((Int) -> Unit)? = null,
     deleteDescription: @Composable (Int) -> String = { "" },
+    scrollTick: Int = 0,
 ) {
     if (count <= 1) return
     val listState = rememberLazyListState()
     val thumbWidthPx = with(LocalDensity.current) { 70.dp.toPx() }
+    val latestCurrent = rememberUpdatedState(current)
+    val latestCount = rememberUpdatedState(count)
 
-    // Keep the current item centred when it changes (arrows, swipes or a tap on a thumbnail).
-    LaunchedEffect(current, count) {
+    // Centre the current item when the strip appears and whenever [scrollTick] changes. The owner raises the tick when the user
+    // moves to another item (swipe, arrows, a tap on a thumbnail) and not when an item is deleted, so deleting leaves the strip
+    // where it is even though the current number or the item count changes.
+    LaunchedEffect(scrollTick) {
         val viewport = listState.layoutInfo.viewportSize.width
-        listState.animateScrollToItem(current.coerceIn(0, count - 1), -(viewport / 2 - (thumbWidthPx / 2).toInt()))
+        listState.animateScrollToItem(latestCurrent.value.coerceIn(0, latestCount.value - 1), -(viewport / 2 - (thumbWidthPx / 2).toInt()))
     }
 
     LazyRow(
@@ -197,8 +260,8 @@ internal fun ThumbStrip(
         items(count, key = { it }) { index ->
             val active = index == current
             val bmp = bitmapFor(index)
-            // On the black viewer the accent colour may be too dim, so the current item is outlined in white there.
-            val accent = if (onDark) Color.White else MaterialTheme.colorScheme.primary
+            // The same accent as the normal screen; on the black viewer it is only lightened when the theme's colour would be too dark to see.
+            val accent = if (onDark) readableOnDark(MaterialTheme.colorScheme.primary) else MaterialTheme.colorScheme.primary
             val borderColor = if (active) accent else if (onDark) Color(0xFF666666) else MaterialTheme.colorScheme.outlineVariant
             val labelColor = if (active) accent else if (onDark) Color(0xFFBBBBBB) else MaterialTheme.colorScheme.onSurfaceVariant
             val description = descriptionFor(index)
@@ -262,11 +325,12 @@ internal fun ThumbStrip(
 
 /**
  * Full-screen viewer: pinch to zoom (up to 8x), drag to pan, double-tap to zoom in or out. While not zoomed, a horizontal
- * swipe changes item. [strip] is shown below the image (a [ThumbStrip] with onDark = true).
+ * swipe changes item. [strip] is shown below the image and is told whether the viewer is dark, so it can pass that to [ThumbStrip].
+ * The viewer follows the app's light or dark theme.
  */
 @Composable
 internal fun ZoomableViewer(
-    image: ImageBitmap?,
+    image: ViewerImage?,
     grayscale: Boolean,
     title: String,
     description: String,
@@ -275,18 +339,17 @@ internal fun ZoomableViewer(
     current: Int,
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit,
-    strip: @Composable () -> Unit,
+    strip: @Composable (onDark: Boolean) -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        var scale by remember { mutableFloatStateOf(1f) }
-        var offset by remember { mutableStateOf(Offset.Zero) }
+        // Zoom and pan belong to the item on screen: they start again as soon as another item is chosen, in the same frame, so
+        // the page sliding out and the one sliding in are never drawn with the old zoom.
+        var scale by remember(current) { mutableFloatStateOf(1f) }
+        var offset by remember(current) { mutableStateOf(Offset.Zero) }
         var box by remember { mutableStateOf(IntSize.Zero) }
-
-        // A different item starts un-zoomed.
-        LaunchedEffect(current) { scale = 1f; offset = Offset.Zero }
 
         fun clamp(o: Offset, s: Float): Offset {
             val mx = box.width * (s - 1f) / 2f
@@ -294,7 +357,26 @@ internal fun ZoomableViewer(
             return Offset(o.x.coerceIn(-mx, mx), o.y.coerceIn(-my, my))
         }
 
-        Column(Modifier.fillMaxSize().background(Color(0xFF111111))) {
+        // Follow the theme: near-black with white controls in dark mode, a light grey with dark controls in light mode.
+        val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+        val backdrop = if (dark) Color(0xFF111111) else MaterialTheme.colorScheme.surfaceVariant
+        val barBackdrop = if (dark) Color.Black.copy(alpha = 0.45f) else MaterialTheme.colorScheme.surface.copy(alpha = 0.88f)
+        val stripBackdrop = if (dark) Color(0xFF1B1B1B) else MaterialTheme.colorScheme.surface
+        val content = if (dark) Color.White else MaterialTheme.colorScheme.onSurface
+        val disabled = if (dark) Color.Gray else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+
+        // The dialog is its own window, so its status and navigation bar icons must be set to contrast with the backdrop.
+        val view = LocalView.current
+        SideEffect {
+            (view.parent as? DialogWindowProvider)?.window?.let { window ->
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
+        }
+
+        Column(Modifier.fillMaxSize().background(backdrop)) {
             // The zoomable image area. Gestures live here only, so the thumbnail strip below scrolls on its own.
             Box(
                 Modifier
@@ -337,18 +419,25 @@ internal fun ZoomableViewer(
                         }
                     }
             ) {
-                if (image != null) {
-                    Image(
-                        bitmap = image,
-                        contentDescription = description,
-                        contentScale = ContentScale.Fit,
-                        colorFilter = if (grayscale) GRAY_FILTER else null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
-                    )
-                } else {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center), color = Color.White)
+                AnimatedContent(
+                    targetState = image,
+                    transitionSpec = { pageFlipTransition(initialState?.index, targetState?.index) },
+                    modifier = Modifier.fillMaxSize(),
+                    label = "viewer_page_flip",
+                ) { shown ->
+                    if (shown != null) {
+                        Image(
+                            bitmap = shown.bitmap,
+                            contentDescription = description,
+                            contentScale = ContentScale.Fit,
+                            colorFilter = if (grayscale) GRAY_FILTER else null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offset.x, translationY = offset.y)
+                        )
+                    } else {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = if (dark) Color.White else MaterialTheme.colorScheme.primary) }
+                    }
                 }
 
                 // Top bar: close, position, previous and next
@@ -356,22 +445,22 @@ internal fun ZoomableViewer(
                     modifier = Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .background(Color.Black.copy(alpha = 0.45f))
+                        .background(barBackdrop)
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = Color.White) }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cd_close), tint = content) }
                     Text(
                         title + if (scale > 1.02f) "  •  ${"%.1f".format(scale)}x" else "",
-                        color = Color.White,
+                        color = content,
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f),
                     )
                     IconButton(onClick = { onSelect(current - 1) }, enabled = current > 0) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (current > 0) Color.White else Color.Gray)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (current > 0) content else disabled)
                     }
                     IconButton(onClick = { onSelect(current + 1) }, enabled = current < count - 1) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet), tint = if (current < count - 1) Color.White else Color.Gray)
+                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = stringResource(R.string.cd_next_sheet), tint = if (current < count - 1) content else disabled)
                     }
                 }
             }
@@ -380,19 +469,34 @@ internal fun ZoomableViewer(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF1B1B1B))
+                    .background(stripBackdrop)
                     .navigationBarsPadding()
                     .padding(top = 6.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                strip()
+                strip(dark)
                 Text(
                     hint,
-                    color = Color.White.copy(alpha = 0.8f),
+                    color = content.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
+    }
+}
+
+/** A small tonal button that puts back pages that were removed: "Restore 3 pages". Replaces nothing when there is nothing to restore. */
+@Composable
+internal fun RestoreButton(count: Int, onClick: () -> Unit) {
+    FilledTonalButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        modifier = Modifier.height(32.dp)
+    ) {
+        Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(pluralStringResource(R.plurals.restore_pages, count, count), style = MaterialTheme.typography.labelMedium)
     }
 }
