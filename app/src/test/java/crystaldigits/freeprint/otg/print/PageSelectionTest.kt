@@ -30,4 +30,28 @@ class PageSelectionTest {
     @Test fun emptyAfterParityRejected() = assertTrue(err("2", Parity.ODD).contains("No pages"))
     @Test fun singlePageDocument() = assertEquals(listOf(1), ok("", n = 1))
     @Test fun zeroPageDocumentIsInvalid() = assertTrue(PageSelection.parse("", Parity.ALL, 0) is PageSelection.Invalid)
+
+    // ---- format: the inverse of parse, used when a page is removed from the strip ----
+
+    private fun fmt(vararg zeroBased: Int) = PageSelection.format(zeroBased.toList())
+
+    @Test fun formatJoinsRunsAndKeepsSingles() = assertEquals("1-3, 5, 8-10", fmt(0, 1, 2, 4, 7, 8, 9))
+    @Test fun formatSingle() = assertEquals("4", fmt(3))
+    @Test fun formatPair() = assertEquals("2-3", fmt(1, 2))
+    @Test fun formatSortsAndDeduplicates() = assertEquals("1-2, 5", fmt(4, 1, 0, 1))
+    @Test fun formatEmptyIsEmpty() = assertEquals("", fmt())
+
+    @Test fun formatThenParseGivesBackTheSamePages() {
+        val cases = listOf(listOf(0), listOf(0, 2, 4), listOf(0, 1, 2, 3), listOf(3, 4, 8, 9, 10), (0 until 10).toList())
+        for (c in cases) {
+            val back = (PageSelection.parse(PageSelection.format(c), Parity.ALL, 12) as PageSelection.Pages).indices
+            assertEquals(c, back)
+        }
+    }
+
+    @Test fun removingAPageFromAFullSelectionLeavesTheOthers() {
+        val all = (0 until 7).toList()
+        val without3 = all.filter { it != 2 }                       // the user deletes page 3
+        assertEquals("1-2, 4-7", PageSelection.format(without3))
+    }
 }
