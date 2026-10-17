@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.ui
+package crescentric.freeprint.otg.ui
 
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -109,11 +109,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import crystaldigits.freeprint.otg.R
-import crystaldigits.freeprint.otg.scan.ScanArea
-import crystaldigits.freeprint.otg.scan.ScanMessage
-import crystaldigits.freeprint.otg.scan.ScanViewModel
-import crystaldigits.freeprint.otg.scan.ScannerStatus
+import crescentric.freeprint.otg.R
+import crescentric.freeprint.otg.scan.ScanArea
+import crescentric.freeprint.otg.scan.ScanMessage
+import crescentric.freeprint.otg.scan.ScanViewModel
+import crescentric.freeprint.otg.scan.ScannerStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -379,7 +379,8 @@ private fun PageStrip(vm: ScanViewModel, onDark: Boolean = false) {
         descriptionFor = { i -> stringResource(R.string.cd_scan_page, i + 1) },
         bitmapFor = { i -> vm.pages.getOrNull(i)?.let { rememberThumb(it.file) } },
         onDark = onDark,
-        onDelete = if (onDark) null else { i -> vm.removePage(i) },
+        scrollTick = vm.pageScrollTick,
+        onDelete = { i -> vm.removePage(i) },
         deleteDescription = { stringResource(R.string.cd_delete_page) },
     )
 }
@@ -403,16 +404,8 @@ private fun ScanPreviewCard(vm: ScanViewModel, onOpenViewer: () -> Unit) {
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.scan_preview_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (!page.gray) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Text(
-                        stringResource(if (page.gray) R.string.mode_grayscale else R.string.mode_colour),
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                    )
-                }
+                // Appears once pages have been deleted
+                if (vm.deletedCount > 0) RestoreButton(vm.deletedCount, vm::restorePages)
             }
 
             PageStrip(vm)
@@ -437,24 +430,7 @@ private fun ScanPreviewCard(vm: ScanViewModel, onOpenViewer: () -> Unit) {
                         // Keyed on the picture and the page it shows: a different page slides in from the right when it
                         // is later in the list and from the left when it is earlier.
                         targetState = image,
-                        transitionSpec = {
-                            val from = initialState?.index
-                            val to = targetState?.index
-                            val slide = tween<IntOffset>(280, easing = FastOutSlowInEasing)
-                            val transform: ContentTransform = when {
-                                from == null || to == null -> fadeIn(tween(200)).togetherWith(fadeOut(tween(200)))
-                                to > from ->
-                                    (slideInHorizontally(slide) { w -> w } + fadeIn(tween(250))).togetherWith(
-                                        slideOutHorizontally(slide) { w -> -w } + fadeOut(tween(200))
-                                    )
-                                to < from ->
-                                    (slideInHorizontally(slide) { w -> -w } + fadeIn(tween(250))).togetherWith(
-                                        slideOutHorizontally(slide) { w -> w } + fadeOut(tween(200))
-                                    )
-                                else -> fadeIn(tween(220)).togetherWith(fadeOut(tween(220)))
-                            }
-                            transform.using(SizeTransform(clip = false))
-                        },
+                        transitionSpec = { pageFlipTransition(initialState?.index, targetState?.index) },
                         label = "scan_page_flip",
                     ) { shown ->
                         if (shown != null) {
@@ -531,7 +507,7 @@ private fun ScanPreviewCard(vm: ScanViewModel, onOpenViewer: () -> Unit) {
 private fun ScanViewer(vm: ScanViewModel, onDismiss: () -> Unit) {
     val position = stringResource(R.string.page_x_of_y, vm.pageIndex + 1, vm.pages.size)
     ZoomableViewer(
-        image = vm.largePreview?.asImageBitmap(),
+        image = remember(vm.largeImage) { vm.largeImage?.let { ViewerImage(it.index, it.bitmap.asImageBitmap()) } },
         grayscale = false,
         title = position,
         description = position,
@@ -540,7 +516,7 @@ private fun ScanViewer(vm: ScanViewModel, onDismiss: () -> Unit) {
         current = vm.pageIndex,
         onSelect = vm::selectPage,
         onDismiss = onDismiss,
-        strip = { PageStrip(vm, onDark = true) },
+        strip = { dark -> PageStrip(vm, onDark = dark) },
     )
 }
 
