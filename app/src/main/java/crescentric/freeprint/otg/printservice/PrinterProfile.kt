@@ -17,6 +17,10 @@ object PrinterProfile {
         MediaSize.ISO_A5 to Paper.A5,
         MediaSize.NA_LEGAL to Paper.LEGAL,
         MediaSize.NA_INDEX_4X6 to Paper.INDEX_4X6,
+        MediaSize.ISO_A6 to Paper.A6,
+        MediaSize.ISO_B5 to Paper.B5,
+        MediaSize("NA_EXECUTIVE", "Executive", 7250, 10500) to Paper.EXECUTIVE,
+        MediaSize.NA_GOVT_LETTER to Paper.PHOTO_8X10,
     )
 
     private val RESOLUTION = Resolution("r600", "600 dpi", 600, 600)
