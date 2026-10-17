@@ -51,16 +51,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -102,6 +108,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Tune
@@ -1042,7 +1049,7 @@ private fun subtitle(vm: PrintViewModel, setting: Setting): String {
     }
 }
 
-/** All print settings as a plain list; tapping a row opens a popup for just that setting. */
+/** All print settings as a two-column grid of tiles; tapping one opens a popup for just that setting. */
 @Composable
 private fun SettingsCard(vm: PrintViewModel) {
     var open by remember { mutableStateOf<Setting?>(null) }
@@ -1059,19 +1066,28 @@ private fun SettingsCard(vm: PrintViewModel) {
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp)
             )
-            Setting.entries.forEachIndexed { i, setting ->
-                SettingRow(setting, subtitle(vm, setting)) { open = setting }
-                if (i < Setting.entries.lastIndex) HorizontalDivider(modifier = Modifier.padding(start = 56.dp))
+            Column(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Setting.entries.chunked(2).forEach { pair ->
+                    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        pair.forEach { setting ->
+                            SettingTile(
+                                setting.icon, stringResource(setting.titleRes), subtitle(vm, setting),
+                                onClick = { open = setting },
+                                modifier = Modifier.weight(1f).fillMaxHeight()
+                            )
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
 
     open?.let { SettingDialog(it, vm) { open = null } }
 }
-
-@Composable
-private fun SettingRow(setting: Setting, value: String, onClick: () -> Unit) =
-    SettingRow(setting.icon, stringResource(setting.titleRes), value, onClick)
 
 /** The popup for one setting. Changes apply immediately (the preview updates behind it); Done closes it. */
 @Composable
@@ -1094,7 +1110,18 @@ private fun SettingDialog(setting: Setting, vm: PrintViewModel, onDismiss: () ->
                         vm.updateOptions(o.copy(color = it)); onDismiss()
                     }
 
-                    Setting.QUALITY -> RadioList(Quality.entries, o.quality, { stringResource(it.labelRes) }) {
+                    Setting.QUALITY -> RadioList(
+                        Quality.entries, o.quality, { stringResource(it.labelRes) },
+                        description = {
+                            stringResource(
+                                when (it) {
+                                    Quality.DRAFT -> R.string.quality_draft_desc
+                                    Quality.NORMAL -> R.string.quality_normal_desc
+                                    Quality.HIGH -> R.string.quality_high_desc
+                                }
+                            )
+                        }
+                    ) {
                         vm.updateOptions(o.copy(quality = it)); onDismiss()
                     }
 
@@ -1155,17 +1182,73 @@ private fun PagesToPrintControls(vm: PrintViewModel) {
         singleLine = true,
         isError = sel is PageSelection.Invalid,
         supportingText = {
-            Text(
-                when (sel) {
-                    is PageSelection.Invalid -> stringResource(sel.errorRes, *sel.args.toTypedArray())
-                    is PageSelection.Pages -> stringResource(R.string.range_selected, sel.indices.size, total)
-                }
-            )
+            if (sel is PageSelection.Invalid) Text(stringResource(sel.errorRes, *sel.args.toTypedArray()))
         },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp)
     )
+    if (total in 1..MAX_PAGE_PILLS) {
+        val chosen = (sel as? PageSelection.Pages)?.indices?.toSet().orEmpty()
+        Text(
+            stringResource(R.string.pages_tap_hint),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            for (i in 0 until total) {
+                val on = i in chosen
+                Surface(
+                    onClick = {
+                        val next = if (on) chosen - i else chosen + i
+                        if (next.isNotEmpty()) {
+                            if (vm.parity != Parity.ALL) vm.updateParity(Parity.ALL)   // the list is explicit from here on
+                            vm.setRange(PageSelection.format(next.sorted()))
+                        }
+                    },
+                    shape = RoundedCornerShape(50),
+                    color = if (on) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    contentColor = if (on) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                ) {
+                    Text(
+                        "${i + 1}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                        modifier = Modifier.widthIn(min = 28.dp).padding(horizontal = 7.dp, vertical = 5.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+    }
+    // Below the pills: the count on the left, the reset on the right
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (sel is PageSelection.Pages) {
+            Text(
+                stringResource(R.string.range_selected, sel.indices.size, total),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+        } else Spacer(Modifier.weight(1f))
+        // Always laid out, only faded and disabled when there is nothing to reset, so the dialog never changes height
+        val canReset = vm.rangeText.isNotBlank() || vm.parity != Parity.ALL
+        val resetAlpha by animateFloatAsState(if (canReset) 1f else 0f, label = "reset_alpha")
+        Row(
+            modifier = Modifier
+                .alpha(resetAlpha)
+                .clickable(enabled = canReset) { vm.updateParity(Parity.ALL); vm.setRange("") },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(Icons.Default.Restore, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+            Text(stringResource(R.string.pages_reset), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
+    }
 }
+
+private const val MAX_PAGE_PILLS = 300
 
 @Composable
 private fun SizingControls(vm: PrintViewModel) {
@@ -1200,15 +1283,6 @@ private fun TwoSidedControls(vm: PrintViewModel) {
         RadioList(
             TwoSided.entries, o.twoSided, { stringResource(it.labelRes) },
             onPick = { vm.updateOptions(o.copy(twoSided = it)) },
-            description = {
-                stringResource(
-                    when (it) {
-                        TwoSided.OFF -> R.string.two_sided_desc_off
-                        TwoSided.LONG_EDGE -> R.string.two_sided_desc_long
-                        TwoSided.SHORT_EDGE -> R.string.two_sided_desc_short
-                    }
-                )
-            },
         )
 
         if (o.twoSided != TwoSided.OFF) {
@@ -1655,6 +1729,7 @@ private fun PositionControls(vm: PrintViewModel) {
 }
 
 /** Sticky bottom bar with animated job feedback & smooth progress */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StickyPrintBar(vm: PrintViewModel) {
     val job = vm.job
@@ -1775,40 +1850,76 @@ private fun StickyPrintBar(vm: PrintViewModel) {
                 }
             }
 
+            val o = vm.options
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         pluralStringResource(R.plurals.sheets_count, vm.sheetCount, vm.sheetCount),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        stringResource(R.string.bar_paper_mode, vm.options.paper.label, stringResource(if (vm.options.color) R.string.mode_colour else R.string.mode_grayscale)),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Button(
-                    onClick = vm::print,
-                    enabled = canPrint,
-                    modifier = Modifier.height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 24.dp)
-                ) {
-                    Icon(Icons.Default.Print, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        stringResource(if (job is JobState.Printing) R.string.printing_button else if (vm.duplexPlan != null) R.string.print_fronts else R.string.print_button),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    // What will be printed, at a glance: the settings in effect, as small pills
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        PrefChip(Icons.Default.Description, o.paper.label)
+                        PrefChip(Icons.Default.Palette, stringResource(if (o.color) R.string.mode_colour else R.string.mode_grayscale))
+                        PrefChip(Icons.Default.HighQuality, stringResource(o.quality.labelRes))
+                        if (o.perSheet.n > 1) PrefChip(Icons.Default.GridView, stringResource(R.string.chip_per_sheet, o.perSheet.n))
+                        if (o.orientation != Orientation.AUTO) PrefChip(Icons.Default.ScreenRotation, stringResource(o.orientation.labelRes))
+                        if (o.twoSided != TwoSided.OFF) {
+                            PrefChip(
+                                Icons.Default.FlipToBack,
+                                stringResource(if (o.twoSided == TwoSided.LONG_EDGE) R.string.chip_two_long else R.string.chip_two_short),
+                                highlighted = true
+                            )
+                        }
+                        if (vm.rangeText.isNotBlank()) PrefChip(Icons.Default.FilterNone, stringResource(R.string.chip_pages, vm.rangeText.trim()))
+                    }
                 }
             }
+
+            Button(
+                onClick = vm::print,
+                enabled = canPrint,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
+            ) {
+                Icon(Icons.Default.Print, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(if (job is JobState.Printing) R.string.printing_button else if (vm.duplexPlan != null) R.string.print_fronts else R.string.print_button),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                )
+            }
+
+        }
+    }
+}
+
+/** One setting in effect, shown on the print bar. [highlighted] marks one that changes how the job runs (two-sided needs a flip). */
+@Composable
+private fun PrefChip(icon: ImageVector, text: String, highlighted: Boolean = false) {
+    val container = if (highlighted) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.secondaryContainer
+    val content = if (highlighted) MaterialTheme.colorScheme.onTertiaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+    Surface(shape = RoundedCornerShape(50), color = container, contentColor = content) {
+        Row(
+            modifier = Modifier.padding(start = 7.dp, end = 9.dp, top = 3.dp, bottom = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(12.dp))
+            Text(text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, maxLines = 1)
         }
     }
 }
