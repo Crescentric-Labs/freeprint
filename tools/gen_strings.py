@@ -243,6 +243,7 @@ S = {
 
 # plurals: key: (english one, english other, sinhala one, sinhala other); every string takes the count as %1$d
 P = {
+ "restore_pages": ("Restore %1$d page", "Restore %1$d pages", "පිටු %1$d ක් යළි පිහිටුවන්න", "පිටු %1$d ක් යළි පිහිටුවන්න"),
  "fronts_printed": ("%1$d front side printed.", "%1$d front sides printed.", "ඉදිරිපස %1$d ක් මුද්‍රණය විය.", "ඉදිරිපස %1$d ක් මුද්‍රණය විය."),
  "backs_next": ("Next: %1$d back side.", "Next: %1$d back sides.", "ඊළඟට: පිටුපස %1$d.", "ඊළඟට: පිටුපස %1$d."),
  "scanned_pages": ("%1$d scanned page", "%1$d scanned pages", "ස්කෑන් කළ පිටු %1$d", "ස්කෑන් කළ පිටු %1$d"),
