@@ -99,10 +99,7 @@
     <string name="sub_two_sided_short">Manual, short edge</string>
     <string name="sub_two_sided_reversed">backs in reverse order</string>
     <string name="two_sided_reverse">Print the back sides in reverse order</string>
-    <string name="two_sided_desc_off">Print on one side of the paper only.</string>
-    <string name="two_sided_desc_long">For pages bound or flipped along the long edge, like a book. Turn the stack over like a book page; the backs print upright.</string>
-    <string name="two_sided_desc_short">For pages bound or flipped along the short edge, like a notepad or calendar. Turn the stack over the same way; the backs are turned upside down for you so they read correctly.</string>
-    <string name="two_sided_hint">For printers that cannot print on both sides by themselves: the front sides print first, then you turn the stack over and the back sides print. Neither choice adds extra space for binding; use Margins for that. If the backs come out in the wrong order, switch on the reverse option.</string>
+    <string name="two_sided_hint">Fronts print first. Then you flip the stack and the backs print.</string>
     <string name="print_fronts">Print front sides</string>
     <string name="flip_demo_long">Long edge (book style)</string>
     <string name="flip_demo_short">Short edge (notepad style)</string>
@@ -138,6 +135,10 @@
     <string name="pos_reset">Reset to centre</string>
     <string name="printing_preparing">Preparing print job…</string>
     <string name="printing_sheet">Sending sheet %1$d of %2$d…</string>
+    <string name="chip_per_sheet">%1$d per sheet</string>
+    <string name="chip_pages">Pages %1$s</string>
+    <string name="chip_two_long">Two-sided, long edge</string>
+    <string name="chip_two_short">Two-sided, short edge</string>
     <string name="bar_paper_mode">%1$s • %2$s</string>
     <string name="print_button">Print</string>
     <string name="printing_button">Printing…</string>
@@ -209,6 +210,11 @@
     <string name="language_system">System default</string>
     <string name="language_en">English</string>
     <string name="language_si">සිංහල</string>
+    <string name="quality_draft_desc">Fastest, uses the least ink. Good for drafts and proofs.</string>
+    <string name="quality_normal_desc">Balanced speed and quality for everyday documents.</string>
+    <string name="quality_high_desc">Slowest, sharpest result. Best for photos and graphics.</string>
+    <string name="pages_reset">Select all</string>
+    <string name="pages_tap_hint">Tap page numbers to pick them</string>
     <string name="quality_draft">Draft</string>
     <string name="quality_normal">Normal</string>
     <string name="quality_high">High</string>
