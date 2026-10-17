@@ -1,7 +1,7 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 import androidx.annotation.StringRes
-import crystaldigits.freeprint.otg.R
+import crescentric.freeprint.otg.R
 
 /** Paper sizes the G2020 advertises. Pixel sizes are at 600 dpi, the printer's only resolution. */
 enum class Paper(val label: String, val media: String, val widthPt: Int, val heightPt: Int, val widthPx: Int, val heightPx: Int) {
