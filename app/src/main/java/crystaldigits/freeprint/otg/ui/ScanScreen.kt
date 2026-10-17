@@ -379,6 +379,8 @@ private fun PageStrip(vm: ScanViewModel, onDark: Boolean = false) {
         descriptionFor = { i -> stringResource(R.string.cd_scan_page, i + 1) },
         bitmapFor = { i -> vm.pages.getOrNull(i)?.let { rememberThumb(it.file) } },
         onDark = onDark,
+        onDelete = if (onDark) null else { i -> vm.removePage(i) },
+        deleteDescription = { stringResource(R.string.cd_delete_page) },
     )
 }
 
