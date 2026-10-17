@@ -134,6 +134,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -807,7 +808,7 @@ private fun DocumentPreviewSection(
                     } else {
                         Spacer(Modifier.weight(1f))
                     }
-                    TextButton(onClick = onAddFiles) {
+                    FilledTonalButton(onClick = onAddFiles) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(stringResource(R.string.add_files))
