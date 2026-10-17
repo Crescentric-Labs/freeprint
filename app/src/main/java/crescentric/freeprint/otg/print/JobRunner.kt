@@ -1,9 +1,9 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
-import crystaldigits.freeprint.otg.PrintSession
+import crescentric.freeprint.otg.PrintSession
 import java.nio.ByteBuffer
 import kotlin.math.min
 
