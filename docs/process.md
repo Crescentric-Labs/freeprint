@@ -109,6 +109,14 @@ python3 -I mkpwg.py test-a4.pwg
     `USB_PERMISSION` broadcast action. It is a different app to Android, so the old build was uninstalled
     from the phone and the USB permission has to be granted again.
 
+## Rename (second)
+
+The organisation prefix of the application ID and package changed from `crystaldigits` to `crescentric`:
+`crescentric.freeprint.otg`. Gradle `applicationId` and `namespace`, the source folders (`main` and `test`), every `package` and
+`import`, the JNI function names (`Java_crescentric_freeprint_otg_*`), the `USB_PERMISSION` action and the print-service settings
+activity all follow it. To Android this is a different app, so the old build was uninstalled from the phone, USB access has to be
+allowed again and the print service enabled again. The entry above is the earlier rename and is left as history.
+
 ## Cleanup
 
 - Removed generated artefacts: Gutenprint streams (`out.prn`, `out-a4.prn`), the generated PPD,
