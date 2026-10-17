@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.scan
+package crescentric.freeprint.otg.scan
 
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
