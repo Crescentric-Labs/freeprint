@@ -174,8 +174,25 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun updateOptions(o: PrintOptions) { options = o; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
-    fun setRange(text: String) { forgetRestorePoint(); rangeText = text; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
-    fun updateParity(p: Parity) { forgetRestorePoint(); parity = p; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
+    fun setRange(text: String) { changeSelection { rangeText = text } }
+    fun updateParity(p: Parity) { changeSelection { parity = p } }
+
+    /**
+     * Applies a change to the range or the odd/even filter. If it leaves fewer pages chosen than before, the earlier choice is kept
+     * as the restore point, so the Restore button also covers pages dropped here, not only ones removed with the strip's delete button.
+     */
+    private fun changeSelection(apply: () -> Unit) {
+        val before = (selection as? PageSelection.Pages)?.indices?.size
+        val old = RestorePoint(rangeText, parity, before ?: 0)
+        apply()
+        val after = (selection as? PageSelection.Pages)?.indices?.size
+        if (before != null && after != null) {
+            val point = restorePoint ?: if (after < before) old.also { restorePoint = it } else null
+            val dropped = if (point == null) 0 else point.pageCount - after
+            if (dropped > 0) removedCount = dropped else forgetRestorePoint()
+        }
+        invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview()
+    }
 
     /**
      * Takes the pages on [sheet] out of the pages to print. The file is untouched; the chosen pages are rewritten as a range
