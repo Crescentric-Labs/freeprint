@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.scan
+package crescentric.freeprint.otg.scan
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
