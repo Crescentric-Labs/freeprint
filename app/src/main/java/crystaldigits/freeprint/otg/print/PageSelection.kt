@@ -18,6 +18,24 @@ sealed interface PageSelection {
 
     companion object {
         /**
+         * The reverse of [parse]: writes 0-based [indices] as a compact range string such as "1-3, 5, 8-10". Indices are
+         * sorted and de-duplicated first. Empty input gives an empty string, which [parse] reads as "every page", so callers
+         * must not pass an empty list when they mean "no pages".
+         */
+        fun format(indices: List<Int>): String {
+            val pages = indices.map { it + 1 }.distinct().sorted()
+            val parts = ArrayList<String>()
+            var i = 0
+            while (i < pages.size) {
+                var j = i
+                while (j + 1 < pages.size && pages[j + 1] == pages[j] + 1) j++
+                parts += if (j == i) "${pages[i]}" else "${pages[i]}-${pages[j]}"
+                i = j + 1
+            }
+            return parts.joinToString(", ")
+        }
+
+        /**
          * Parses "1-3, 5, 8-" style text (comma or space separated; "a-" runs to the last page, "-b" starts at
          * page 1). Blank text means every page. The result is sorted and has no duplicates; [parity] then keeps
          * only odd or even page numbers.
