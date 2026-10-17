@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 /**
  * How the sheets of a job are split into two passes when the printer cannot print on both sides itself.
