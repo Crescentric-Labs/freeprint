@@ -99,10 +99,7 @@
     <string name="sub_two_sided_short">අතින්, කෙටි කෙළවර</string>
     <string name="sub_two_sided_reversed">පිටුපස ප්‍රතිවර්ත අනුපිළිවෙලින්</string>
     <string name="two_sided_reverse">පිටුපස පැති ප්‍රතිවර්ත අනුපිළිවෙලින් මුද්‍රණය කරන්න</string>
-    <string name="two_sided_desc_off">කඩදාසියේ එක් පැත්තක් පමණක් මුද්‍රණය කරන්න.</string>
-    <string name="two_sided_desc_long">දිගු කෙළවර ඔස්සේ බැඳ හෝ පෙරළන පිටු සඳහා, පොතක් මෙන්. ගොඩ පොතක පිටුවක් මෙන් පෙරළන්න; පිටුපස පැති කෙලින් මුද්‍රණය වේ.</string>
-    <string name="two_sided_desc_short">කෙටි කෙළවර ඔස්සේ බැඳ හෝ පෙරළන පිටු සඳහා, සටහන් පොතක් හෝ දින දර්ශනයක් මෙන්. ගොඩ එලෙසම පෙරළන්න; පිටුපස පැති නිවැරදිව කියවීමට ඔබ වෙනුවෙන් යටිකුරු කෙරේ.</string>
-    <string name="two_sided_hint">ස්වයංක්‍රීයව දෙපැත්තේම මුද්‍රණය කළ නොහැකි මුද්‍රණ යන්ත්‍ර සඳහා: මුලින් ඉදිරිපස පැති මුද්‍රණය වේ, ඉන්පසු ගොඩ පෙරළූ විට පිටුපස පැති මුද්‍රණය වේ. කිසිදු තේරීමක් බැඳීම සඳහා අමතර ඉඩක් එක් නොකරයි; ඒ සඳහා මායිම් භාවිතා කරන්න. පිටුපස පැති වැරදි අනුපිළිවෙලකට පැමිණියහොත් ප්‍රතිවර්ත විකල්පය ක්‍රියාත්මක කරන්න.</string>
+    <string name="two_sided_hint">මුලින් ඉදිරිපස මුද්‍රණය වේ. ඉන්පසු ගොඩ පෙරළූ විට පිටුපස මුද්‍රණය වේ.</string>
     <string name="print_fronts">ඉදිරිපස මුද්‍රණය කරන්න</string>
     <string name="flip_demo_long">දිගු කෙළවර (පොතක් මෙන්)</string>
     <string name="flip_demo_short">කෙටි කෙළවර (සටහන් පොතක් මෙන්)</string>
@@ -138,6 +135,10 @@
     <string name="pos_reset">මැදට යළි සකසන්න</string>
     <string name="printing_preparing">මුද්‍රණ කාර්යය සූදානම් කරමින්…</string>
     <string name="printing_sheet">පත්‍රය %1$d / %2$d යවමින්…</string>
+    <string name="chip_per_sheet">පත්‍රයකට %1$d</string>
+    <string name="chip_pages">පිටු %1$s</string>
+    <string name="chip_two_long">දෙපැත්ත, දිගු කෙළවර</string>
+    <string name="chip_two_short">දෙපැත්ත, කෙටි කෙළවර</string>
     <string name="bar_paper_mode">%1$s • %2$s</string>
     <string name="print_button">මුද්‍රණය</string>
     <string name="printing_button">මුද්‍රණය වෙමින්…</string>
@@ -209,6 +210,11 @@
     <string name="language_system">පද්ධති පෙරනිමිය</string>
     <string name="language_en">English</string>
     <string name="language_si">සිංහල</string>
+    <string name="quality_draft_desc">වේගවත්ම, අඩුම තීන්ත භාවිතය. කෙටුම්පත් සඳහා සුදුසුයි.</string>
+    <string name="quality_normal_desc">එදිනෙදා ලේඛන සඳහා වේගය සහ ගුණාත්මකභාවය සමතුලිතයි.</string>
+    <string name="quality_high_desc">මන්දගාමීම, තියුණුම ප්‍රතිඵලය. ඡායාරූප සහ ග්‍රැෆික්ස් සඳහා උතුම්.</string>
+    <string name="pages_reset">සියල්ල තෝරන්න</string>
+    <string name="pages_tap_hint">තෝරා ගැනීමට පිටු අංක ඔබන්න</string>
     <string name="quality_draft">කෙටුම්පත</string>
     <string name="quality_normal">සාමාන්‍ය</string>
     <string name="quality_high">ඉහළ</string>
