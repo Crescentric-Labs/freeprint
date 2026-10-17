@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg
+package crescentric.freeprint.otg
 
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -74,6 +74,6 @@ class UsbPrinter(private val context: Context) {
     }
 
     companion object {
-        const val ACTION_PERMISSION = "crystaldigits.freeprint.otg.USB_PERMISSION"
+        const val ACTION_PERMISSION = "crescentric.freeprint.otg.USB_PERMISSION"
     }
 }
