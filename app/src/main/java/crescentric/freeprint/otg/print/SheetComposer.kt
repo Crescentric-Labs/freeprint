@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
