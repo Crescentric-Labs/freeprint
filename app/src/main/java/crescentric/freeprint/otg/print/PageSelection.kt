@@ -1,9 +1,9 @@
-package crystaldigits.freeprint.otg.print
+package crescentric.freeprint.otg.print
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.annotation.StringRes
-import crystaldigits.freeprint.otg.R
+import crescentric.freeprint.otg.R
 
 /** Which of the chosen pages to keep, by document page number. */
 enum class Parity(@StringRes val labelRes: Int) { ALL(R.string.parity_all), ODD(R.string.parity_odd), EVEN(R.string.parity_even) }
