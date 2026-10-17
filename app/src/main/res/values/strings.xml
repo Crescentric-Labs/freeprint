@@ -222,6 +222,10 @@
     <string name="svc_read_failed">Could not read the document: %1$s</string>
     <string name="svc_failed">Printing failed.</string>
     <string name="svc_printer_desc">USB, driverless (IPP)</string>
+    <plurals name="restore_pages">
+        <item quantity="one">Restore %1$d page</item>
+        <item quantity="other">Restore %1$d pages</item>
+    </plurals>
     <plurals name="fronts_printed">
         <item quantity="one">%1$d front side printed.</item>
         <item quantity="other">%1$d front sides printed.</item>
