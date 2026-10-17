@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg
+package crescentric.freeprint.otg
 
 import android.app.Activity
 import android.content.Context
