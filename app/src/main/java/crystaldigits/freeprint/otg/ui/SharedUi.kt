@@ -23,7 +23,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -173,6 +175,8 @@ internal fun ThumbStrip(
     bitmapFor: @Composable (Int) -> ImageBitmap?,
     onDark: Boolean = false,
     grayscale: Boolean = false,
+    onDelete: ((Int) -> Unit)? = null,
+    deleteDescription: @Composable (Int) -> String = { "" },
 ) {
     if (count <= 1) return
     val listState = rememberLazyListState()
@@ -226,6 +230,22 @@ internal fun ThumbStrip(
                         )
                     } else {
                         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)))
+                    }
+                    // A small round button in the corner removes this item. It sits inside the thumbnail, so a tap on it
+                    // does not also select the thumbnail. Not offered when there is only one item (the strip is hidden).
+                    if (onDelete != null) {
+                        Box(
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(2.dp)
+                                .size(26.dp)
+                                .clip(CircleShape)
+                                .background(Color.Black.copy(alpha = 0.62f))
+                                .clickable { onDelete(index) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = deleteDescription(index), tint = Color.White, modifier = Modifier.size(15.dp))
+                        }
                     }
                 }
                 Text(
