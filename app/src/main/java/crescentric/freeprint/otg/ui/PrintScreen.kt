@@ -29,6 +29,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.DocumentScanner
 import crescentric.freeprint.otg.print.effectiveMarginMm
@@ -76,7 +77,6 @@ import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
@@ -95,7 +95,7 @@ import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Palette
@@ -203,14 +203,13 @@ private enum class PrinterStatusType {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}) {
+fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}, onOpenAbout: () -> Unit = {}) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) vm.replaceFiles(uris)
     }
     val addPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) vm.addFiles(uris)
     }
-    var showDiagnosticsSheet by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var refreshSpinDegrees by remember { mutableFloatStateOf(0f) }
     val animatedRefreshSpin by animateFloatAsState(
@@ -248,8 +247,11 @@ fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}) {
                     }
                 },
                 actions = {
+                    IconButton(onClick = onOpenAbout) {
+                        Icon(Icons.Default.Info, contentDescription = stringResource(R.string.cd_about))
+                    }
                     IconButton(onClick = { showLanguageDialog = true }) {
-                        Icon(Icons.Default.Language, contentDescription = stringResource(R.string.cd_language))
+                        Icon(Icons.Default.Translate, contentDescription = stringResource(R.string.cd_language))
                     }
                     IconButton(onClick = {
                         refreshSpinDegrees += 360f
@@ -260,9 +262,6 @@ fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}) {
                             contentDescription = stringResource(R.string.cd_rescan),
                             modifier = Modifier.graphicsLayer { rotationZ = animatedRefreshSpin }
                         )
-                    }
-                    IconButton(onClick = { showDiagnosticsSheet = true }) {
-                        Icon(Icons.Default.BugReport, contentDescription = stringResource(R.string.cd_diagnostics))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -338,13 +337,6 @@ fun PrintScreen(vm: PrintViewModel, onOpenScan: () -> Unit = {}) {
 
         if (showLanguageDialog) LanguageDialog { showLanguageDialog = false }
         (vm.job as? JobState.NeedsFlip)?.let { FlipDialog(it, onContinue = vm::continueTwoSided, onStop = vm::cancelTwoSided) }
-
-        if (showDiagnosticsSheet) {
-            DiagnosticsBottomSheet(
-                vm = vm,
-                onDismiss = { showDiagnosticsSheet = false }
-            )
-        }
     }
 }
 
@@ -777,7 +769,7 @@ private fun DocumentPreviewSection(
                                 stringResource(
                                     R.string.doc_meta,
                                     pluralStringResource(R.plurals.pages_count, file.pageCount, file.pageCount),
-                                    file.mime ?: stringResource(R.string.doc_fallback)
+                                    friendlyKind(file.mime)
                                 ),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1820,10 +1812,25 @@ private fun StickyPrintBar(vm: PrintViewModel) {
     }
 }
 
+/** A person-readable name for a MIME type ("PDF document" rather than "application/pdf"). */
+@Composable
+private fun friendlyKind(mime: String?): String = stringResource(
+    when (mime?.lowercase()) {
+        null -> R.string.doc_fallback
+        "application/pdf" -> R.string.kind_pdf
+        "image/jpeg", "image/jpg" -> R.string.kind_jpeg
+        "image/png" -> R.string.kind_png
+        "image/webp" -> R.string.kind_webp
+        "image/heic", "image/heif" -> R.string.kind_heic
+        "image/gif" -> R.string.kind_gif
+        else -> if (mime.startsWith("image/")) R.string.kind_image else R.string.doc_fallback
+    }
+)
+
 /** Bottom sheet for hardware diagnostics, USB interface details, and test prints */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DiagnosticsBottomSheet(
+internal fun DiagnosticsBottomSheet(
     vm: PrintViewModel,
     onDismiss: () -> Unit
 ) {
