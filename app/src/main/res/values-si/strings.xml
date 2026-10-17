@@ -83,6 +83,12 @@
     <string name="two_sided_desc_short">කෙටි කෙළවර ඔස්සේ බැඳ හෝ පෙරළන පිටු සඳහා, සටහන් පොතක් හෝ දින දර්ශනයක් මෙන්. ගොඩ එලෙසම පෙරළන්න; පිටුපස පැති නිවැරදිව කියවීමට ඔබ වෙනුවෙන් යටිකුරු කෙරේ.</string>
     <string name="two_sided_hint">ස්වයංක්‍රීයව දෙපැත්තේම මුද්‍රණය කළ නොහැකි මුද්‍රණ යන්ත්‍ර සඳහා: මුලින් ඉදිරිපස පැති මුද්‍රණය වේ, ඉන්පසු ගොඩ පෙරළූ විට පිටුපස පැති මුද්‍රණය වේ. කිසිදු තේරීමක් බැඳීම සඳහා අමතර ඉඩක් එක් නොකරයි; ඒ සඳහා මායිම් භාවිතා කරන්න. පිටුපස පැති වැරදි අනුපිළිවෙලකට පැමිණියහොත් ප්‍රතිවර්ත විකල්පය ක්‍රියාත්මක කරන්න.</string>
     <string name="print_fronts">ඉදිරිපස මුද්‍රණය කරන්න</string>
+    <string name="flip_demo_long">දිගු කෙළවර (පොතක් මෙන්)</string>
+    <string name="flip_demo_short">කෙටි කෙළවර (සටහන් පොතක් මෙන්)</string>
+    <string name="flip_demo_side_1">පැත්ත 1</string>
+    <string name="flip_demo_side_2">පැත්ත 2</string>
+    <string name="flip_demo_long_hint">පොතක පිටුවක් පෙරළන්නාක් මෙන් පැත්තට හැරේ</string>
+    <string name="flip_demo_short_hint">දින දර්ශනයක් පෙරළන්නාක් මෙන් කෙළවරින් කෙළවරට හැරේ</string>
     <string name="flip_title">පිටු පෙරළන්න</string>
     <string name="flip_step_1">තීන්ත වියළීමට මොහොතක් රැඳී සිටින්න.</string>
     <string name="flip_step_2">මුද්‍රිත පිටු ප්‍රතිදාන තැටියෙන් ගෙන ඒවායේ අනුපිළිවෙල නොවෙනස්ව තබා ගන්න.</string>
@@ -156,6 +162,7 @@
     <string name="scan_output_title">සුරකින්න හෝ මුද්‍රණය කරන්න</string>
     <string name="cd_page_earlier">පිටුව කලින් ගෙන යන්න</string>
     <string name="cd_page_later">පිටුව පසුව ගෙන යන්න</string>
+    <string name="cd_remove_from_print">මුද්‍රණයෙන් ඉවත් කරන්න</string>
     <string name="cd_delete_page">පිටුව මකන්න</string>
     <string name="scan_save_pdf">PDF සුරකින්න</string>
     <string name="scan_share">බෙදාගන්න</string>
