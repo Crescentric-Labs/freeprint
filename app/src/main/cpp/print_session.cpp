@@ -140,7 +140,7 @@ Session *S(jlong h) { return reinterpret_cast<Session *>(h); }
 
 }  // namespace
 
-#define JNI(ret, name) extern "C" JNIEXPORT ret JNICALL Java_crystaldigits_freeprint_otg_PrintSession_##name
+#define JNI(ret, name) extern "C" JNIEXPORT ret JNICALL Java_crescentric_freeprint_otg_PrintSession_##name
 
 JNI(jlong, nativeOpen)(JNIEnv *, jobject, jint fd) {
     auto *s = new Session();
