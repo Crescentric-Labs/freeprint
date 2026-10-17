@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg
+package crescentric.freeprint.otg
 
 import android.os.Build
 import android.os.Bundle
@@ -26,9 +26,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import crystaldigits.freeprint.otg.scan.ScanViewModel
-import crystaldigits.freeprint.otg.ui.PrintScreen
-import crystaldigits.freeprint.otg.ui.ScanScreen
+import crescentric.freeprint.otg.scan.ScanViewModel
+import crescentric.freeprint.otg.ui.PrintScreen
+import crescentric.freeprint.otg.ui.ScanScreen
 
 class MainActivity : ComponentActivity() {
     private val vm: PrintViewModel by viewModels()
