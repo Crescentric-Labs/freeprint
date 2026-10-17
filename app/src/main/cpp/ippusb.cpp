@@ -81,7 +81,7 @@ jstring toJString(JNIEnv *env, const std::string &s) { return env->NewStringUTF(
 }  // namespace
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_crystaldigits_freeprint_otg_NativeIpp_getPrinterAttributes(JNIEnv *env, jobject, jint fd) {
+Java_crescentric_freeprint_otg_NativeIpp_getPrinterAttributes(JNIEnv *env, jobject, jint fd) {
     Bytes ipp = ippHeader(0x000B, 1);                      // Get-Printer-Attributes
     sattr(ipp, 0x44, "requested-attributes", "printer-make-and-model");
     ipp.push_back(0x03);
@@ -89,7 +89,7 @@ Java_crystaldigits_freeprint_otg_NativeIpp_getPrinterAttributes(JNIEnv *env, job
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_crystaldigits_freeprint_otg_NativeIpp_printPwgRaster(JNIEnv *env, jobject, jint fd, jbyteArray data) {
+Java_crescentric_freeprint_otg_NativeIpp_printPwgRaster(JNIEnv *env, jobject, jint fd, jbyteArray data) {
     jsize len = env->GetArrayLength(data);
     Bytes doc(len);
     env->GetByteArrayRegion(data, 0, len, reinterpret_cast<jbyte *>(doc.data()));
