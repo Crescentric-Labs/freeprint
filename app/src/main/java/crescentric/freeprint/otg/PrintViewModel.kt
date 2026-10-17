@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg
+package crescentric.freeprint.otg
 
 import android.app.Application
 import android.graphics.Bitmap
@@ -20,16 +20,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import crystaldigits.freeprint.otg.print.CompositeSource
-import crystaldigits.freeprint.otg.print.DuplexPlan
-import crystaldigits.freeprint.otg.print.JobExecutor
-import crystaldigits.freeprint.otg.print.SheetComposer
-import crystaldigits.freeprint.otg.print.PageSource
-import crystaldigits.freeprint.otg.print.PageSelection
-import crystaldigits.freeprint.otg.print.Parity
-import crystaldigits.freeprint.otg.print.PrintOptions
-import crystaldigits.freeprint.otg.print.SelectedPages
-import crystaldigits.freeprint.otg.print.TwoSided
+import crescentric.freeprint.otg.print.CompositeSource
+import crescentric.freeprint.otg.print.DuplexPlan
+import crescentric.freeprint.otg.print.JobExecutor
+import crescentric.freeprint.otg.print.Orientation
+import crescentric.freeprint.otg.print.SheetComposer
+import crescentric.freeprint.otg.print.PageSource
+import crescentric.freeprint.otg.print.PageSelection
+import crescentric.freeprint.otg.print.Parity
+import crescentric.freeprint.otg.print.PrintOptions
+import crescentric.freeprint.otg.print.SelectedPages
+import crescentric.freeprint.otg.print.ThumbRemap
+import crescentric.freeprint.otg.print.TwoSided
 
 class Doc(val uri: Uri, val name: String, val mime: String?, val pageCount: Int)
 
@@ -71,7 +73,8 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     var previewImage by mutableStateOf<PreviewImage?>(null); private set
     val preview: Bitmap? get() = previewImage?.bitmap
     /** High-resolution sheet for the full-screen viewer; null while the viewer is closed. */
-    var largePreview by mutableStateOf<Bitmap?>(null); private set
+    var largeImage by mutableStateOf<PreviewImage?>(null); private set
+    val largePreview: Bitmap? get() = largeImage?.bitmap
     private var largeOpen = false
     var job by mutableStateOf<JobState>(JobState.Idle); private set
     var diagnostics by mutableStateOf(""); private set
@@ -127,6 +130,22 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Keeps the thumbnails that are still right after [sheet] is removed and drops the rest (see [ThumbRemap]), so deleting a
+     * page redraws only what has to change instead of the whole strip.
+     */
+    private fun remapThumbsAfterRemoving(sheet: Int) {
+        val old = thumbCache.snapshot()
+        thumbGeneration++                       // anything still being drawn was drawn for the old numbering
+        thumbPending.clear()
+        thumbCache.evictAll()
+        val firstPageDecidesLayout = options.orientation == Orientation.AUTO || options.perSheet.n > 1
+        for ((key, bitmap) in old) {
+            ThumbRemap.remap(key, sheet, options.perSheet.n, firstPageDecidesLayout)?.let { thumbCache.put(it, bitmap) }
+        }
+        thumbVersion++
+    }
+
     /** Drops every thumbnail; called when the document, the options or the page selection change. */
     private fun invalidateThumbs() {
         thumbGeneration++
@@ -155,8 +174,8 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun updateOptions(o: PrintOptions) { options = o; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
-    fun setRange(text: String) { rangeText = text; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
-    fun updateParity(p: Parity) { parity = p; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
+    fun setRange(text: String) { forgetRestorePoint(); rangeText = text; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
+    fun updateParity(p: Parity) { forgetRestorePoint(); parity = p; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
 
     /**
      * Takes the pages on [sheet] out of the pages to print. The file is untouched; the chosen pages are rewritten as a range
@@ -170,14 +189,41 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         val to = ((sheet + 1) * n).coerceAtMost(chosen.size)
         val kept = chosen.filterIndexed { i, _ -> i < from || i >= to }
         if (kept.isEmpty() || kept.size == chosen.size) return
+        val before = restorePoint ?: RestorePoint(rangeText, parity, chosen.size).also { restorePoint = it }
+        removedCount = before.pageCount - kept.size
         rangeText = PageSelection.format(kept)
         parity = Parity.ALL                      // the list is now explicit, so an odd/even filter would only confuse
-        invalidateThumbs()
+        remapThumbsAfterRemoving(sheet)
         pageIndex = (if (sheet < pageIndex) pageIndex - 1 else pageIndex).coerceIn(0, sheetCount - 1)
         renderPreview()
     }
 
-    fun setPage(i: Int) { pageIndex = i.coerceIn(0, sheetCount - 1); renderPreview() }
+    /** Bumped when the user moves to another sheet, so the strip centres it; not bumped when a sheet is removed. */
+    var pageScrollTick by mutableIntStateOf(0); private set
+
+    /** The selection as it was before pages were removed with the strip's delete button, so it can be put back. */
+    private class RestorePoint(val range: String, val parity: Parity, val pageCount: Int)
+    private var restorePoint: RestorePoint? = null
+
+    /** How many pages the strip's delete button has taken out since the selection last changed some other way. */
+    var removedCount by mutableIntStateOf(0); private set
+
+    private fun forgetRestorePoint() { restorePoint = null; removedCount = 0 }
+
+    /** Puts back every page removed with the strip's delete button. */
+    fun restoreRemoved() {
+        val r = restorePoint ?: return
+        forgetRestorePoint()
+        rangeText = r.range
+        parity = r.parity
+        invalidateThumbs()
+        pageIndex = pageIndex.coerceIn(0, sheetCount - 1)
+        renderPreview()
+    }
+
+    fun setPage(i: Int) {
+        pageScrollTick++
+        pageIndex = i.coerceIn(0, sheetCount - 1); renderPreview() }
 
     fun open(uri: Uri) = replaceFiles(listOf(uri))
 
@@ -226,6 +272,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     /** Makes [list] the current files, rebuilding the preview source. Page numbers change, so any page range is reset. */
     private fun applyFiles(list: List<Doc>, keepPage: Boolean) {
         val ctx = getApplication<Application>()
+        forgetRestorePoint()
         files = list
         rangeText = ""
         parity = Parity.ALL
@@ -233,7 +280,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         pageIndex = if (keepPage) pageIndex.coerceIn(0, sheetCount - 1) else 0
         if (list.isEmpty()) {
             previewImage = null
-            largePreview = null
+            largeImage = null
             job = JobState.Idle
         }
         viewModelScope.launch(Dispatchers.IO) {
@@ -256,7 +303,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     /** Opens or closes the full-screen viewer; while it is open only the large preview is kept up to date. */
     fun setLargePreviewOpen(open: Boolean) {
         largeOpen = open
-        if (!open) largePreview = null
+        if (!open) largeImage = null
         renderPreview()
     }
 
@@ -266,7 +313,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         val o = options
         val page = pageIndex
         val chosen = (selection as? PageSelection.Pages)?.indices
-        if (chosen == null) { previewImage = null; largePreview = null; return }
+        if (chosen == null) { previewImage = null; largeImage = null; return }
         val large = largeOpen
         previewJob?.cancel()
         previewJob = viewModelScope.launch(Dispatchers.IO) {
@@ -274,7 +321,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
                 val src = previewSource ?: return@withLock null
                 composeSheet(SelectedPages(src, chosen), o, page, if (large) LARGE_PREVIEW_WIDTH else PREVIEW_WIDTH)
             }
-            if (bmp != null) { if (large) largePreview = bmp else previewImage = PreviewImage(page, bmp) }
+            if (bmp != null) { if (large) largeImage = PreviewImage(page, bmp) else previewImage = PreviewImage(page, bmp) }
         }
     }
 
