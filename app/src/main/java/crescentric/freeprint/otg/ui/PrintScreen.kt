@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg.ui
+package crescentric.freeprint.otg.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,7 +31,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.FlipToBack
 import androidx.compose.material.icons.filled.DocumentScanner
-import crystaldigits.freeprint.otg.print.effectiveMarginMm
+import crescentric.freeprint.otg.print.effectiveMarginMm
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -176,23 +176,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import crystaldigits.freeprint.otg.AppLocale
-import crystaldigits.freeprint.otg.AppLocale.findActivity
-import crystaldigits.freeprint.otg.JobState
-import crystaldigits.freeprint.otg.PrintViewModel
-import crystaldigits.freeprint.otg.R
-import crystaldigits.freeprint.otg.print.Anchor
-import crystaldigits.freeprint.otg.print.FitMode
-import crystaldigits.freeprint.otg.print.MAX_SCALE_PERCENT
-import crystaldigits.freeprint.otg.print.MIN_SCALE_PERCENT
-import crystaldigits.freeprint.otg.print.Orientation
-import crystaldigits.freeprint.otg.print.PageOrder
-import crystaldigits.freeprint.otg.print.PageSelection
-import crystaldigits.freeprint.otg.print.Paper
-import crystaldigits.freeprint.otg.print.Parity
-import crystaldigits.freeprint.otg.print.PerSheet
-import crystaldigits.freeprint.otg.print.Quality
-import crystaldigits.freeprint.otg.print.TwoSided
+import crescentric.freeprint.otg.AppLocale
+import crescentric.freeprint.otg.AppLocale.findActivity
+import crescentric.freeprint.otg.JobState
+import crescentric.freeprint.otg.PrintViewModel
+import crescentric.freeprint.otg.R
+import crescentric.freeprint.otg.print.Anchor
+import crescentric.freeprint.otg.print.FitMode
+import crescentric.freeprint.otg.print.MAX_SCALE_PERCENT
+import crescentric.freeprint.otg.print.MIN_SCALE_PERCENT
+import crescentric.freeprint.otg.print.Orientation
+import crescentric.freeprint.otg.print.PageOrder
+import crescentric.freeprint.otg.print.PageSelection
+import crescentric.freeprint.otg.print.Paper
+import crescentric.freeprint.otg.print.Parity
+import crescentric.freeprint.otg.print.PerSheet
+import crescentric.freeprint.otg.print.Quality
+import crescentric.freeprint.otg.print.TwoSided
 
 
 private enum class PrinterStatusType {
@@ -846,16 +846,8 @@ private fun DocumentPreviewSection(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (vm.options.color) MaterialTheme.colorScheme.tertiaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                    ) {
-                        Text(
-                            stringResource(if (vm.options.color) R.string.mode_colour else R.string.mode_grayscale),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
+                    // Appears once pages have been removed with the strip's delete button
+                    if (vm.removedCount > 0) RestoreButton(vm.removedCount, vm::restoreRemoved)
                 }
 
                 SheetStrip(vm)
@@ -893,24 +885,7 @@ private fun DocumentPreviewSection(
                             // Keyed on the image and the sheet it shows, so the direction comes from the sheet that
                             // actually changed and a new picture of the same sheet just cross-fades.
                             targetState = vm.previewImage,
-                            transitionSpec = {
-                                val from = initialState?.sheet
-                                val to = targetState?.sheet
-                                val slide = tween<IntOffset>(280, easing = FastOutSlowInEasing)
-                                val transform = when {
-                                    from == null || to == null -> fadeIn(tween(200)).togetherWith(fadeOut(tween(200)))
-                                    to > from ->                                  // forward: the new sheet comes in from the right
-                                        (slideInHorizontally(slide) { width -> width } + fadeIn(tween(250))).togetherWith(
-                                            slideOutHorizontally(slide) { width -> -width } + fadeOut(tween(200))
-                                        )
-                                    to < from ->                                  // back: the new sheet comes in from the left
-                                        (slideInHorizontally(slide) { width -> -width } + fadeIn(tween(250))).togetherWith(
-                                            slideOutHorizontally(slide) { width -> width } + fadeOut(tween(200))
-                                        )
-                                    else -> fadeIn(tween(220)).togetherWith(fadeOut(tween(220)))
-                                }
-                                transform.using(SizeTransform(clip = false))
-                            },
+                            transitionSpec = { pageFlipTransition(initialState?.sheet, targetState?.sheet) },
                             label = "page_flip"
                         ) { image ->
                             val currentBmp = image?.bitmap
@@ -1992,7 +1967,7 @@ private fun <T> FriendlyChipGroup(
 private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
     val position = stringResource(R.string.sheet_x_of_y, vm.pageIndex + 1, vm.sheetCount)
     ZoomableViewer(
-        image = vm.largePreview?.asImageBitmap(),
+        image = remember(vm.largeImage) { vm.largeImage?.let { ViewerImage(it.sheet, it.bitmap.asImageBitmap()) } },
         grayscale = !vm.options.color,
         title = position,
         description = position,
@@ -2001,7 +1976,7 @@ private fun FullScreenPreview(vm: PrintViewModel, onDismiss: () -> Unit) {
         current = vm.pageIndex,
         onSelect = vm::setPage,
         onDismiss = onDismiss,
-        strip = { SheetStrip(vm, onDark = true) },
+        strip = { dark -> SheetStrip(vm, onDark = dark) },
     )
 }
 
@@ -2024,8 +1999,8 @@ private fun SheetStrip(vm: PrintViewModel, onDark: Boolean = false) {
         },
         onDark = onDark,
         grayscale = !vm.options.color,
-        // No delete in the full-screen viewer, where a stray tap while zooming would be easy.
-        onDelete = if (onDark) null else { i -> vm.removeSheet(i) },
+        scrollTick = vm.pageScrollTick,
+        onDelete = { i -> vm.removeSheet(i) },
         deleteDescription = { stringResource(R.string.cd_remove_from_print) },
     )
 }
