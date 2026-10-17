@@ -27,8 +27,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import crescentric.freeprint.otg.scan.ScanViewModel
+import crescentric.freeprint.otg.ui.AboutScreen
 import crescentric.freeprint.otg.ui.PrintScreen
 import crescentric.freeprint.otg.ui.ScanScreen
+
+/** The screens: printing is home; scanning and the About page open on top and slide back. */
+private enum class Screen { PRINT, SCAN, ABOUT }
 
 class MainActivity : ComponentActivity() {
     private val vm: PrintViewModel by viewModels()
@@ -47,13 +51,13 @@ class MainActivity : ComponentActivity() {
                 dark -> darkColorScheme()
                 else -> lightColorScheme()
             }
-            // Two screens: printing (the home screen) and scanning, which can hand its pages back to be printed as a copy.
-            var scanning by rememberSaveable { mutableStateOf(false) }
+            // Printing is the home screen. Scanning can hand its pages back to be printed as a copy; About just goes back.
+            var screen by rememberSaveable { mutableStateOf(Screen.PRINT) }
             MaterialTheme(colorScheme = scheme) {
                 AnimatedContent(
-                    targetState = scanning,
+                    targetState = screen,
                     transitionSpec = {
-                        if (targetState) {
+                        if (targetState != Screen.PRINT) {
                             (slideInHorizontally(tween(350, easing = FastOutSlowInEasing)) { width -> width } + fadeIn(tween(250))).togetherWith(
                                 slideOutHorizontally(tween(300, easing = FastOutSlowInEasing)) { width -> -width / 4 } + fadeOut(tween(200))
                             )
@@ -64,16 +68,21 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     label = "screen_navigation"
-                ) { isScanning ->
-                    if (isScanning) {
-                        BackHandler { scanning = false }
-                        ScanScreen(
-                            scanVm,
-                            onBack = { scanning = false },
-                            onPrint = { files -> vm.replaceFiles(files); scanning = false },
-                        )
-                    } else {
-                        PrintScreen(vm, onOpenScan = { scanning = true })
+                ) { shown ->
+                    when (shown) {
+                        Screen.PRINT -> PrintScreen(vm, onOpenScan = { screen = Screen.SCAN }, onOpenAbout = { screen = Screen.ABOUT })
+                        Screen.SCAN -> {
+                            BackHandler { screen = Screen.PRINT }
+                            ScanScreen(
+                                scanVm,
+                                onBack = { screen = Screen.PRINT },
+                                onPrint = { files -> vm.replaceFiles(files); screen = Screen.PRINT },
+                            )
+                        }
+                        Screen.ABOUT -> {
+                            BackHandler { screen = Screen.PRINT }
+                            AboutScreen(vm, onBack = { screen = Screen.PRINT })
+                        }
                     }
                 }
             }
