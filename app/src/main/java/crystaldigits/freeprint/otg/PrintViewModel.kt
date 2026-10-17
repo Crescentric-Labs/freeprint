@@ -29,6 +29,7 @@ import crystaldigits.freeprint.otg.print.PageSelection
 import crystaldigits.freeprint.otg.print.Parity
 import crystaldigits.freeprint.otg.print.PrintOptions
 import crystaldigits.freeprint.otg.print.SelectedPages
+import crystaldigits.freeprint.otg.print.TwoSided
 
 class Doc(val uri: Uri, val name: String, val mime: String?, val pageCount: Int)
 
@@ -47,7 +48,7 @@ sealed interface JobState {
      * Manual two-sided printing: the front sides are done and the user must turn the stack over before the backs print.
      * [unpairedLast] is true when the final front has no back; [reversed] when the backs print last-to-first.
      */
-    data class NeedsFlip(val fronts: Int, val backs: Int, val unpairedLast: Boolean, val reversed: Boolean) : JobState
+    data class NeedsFlip(val fronts: Int, val backs: Int, val unpairedLast: Boolean, val reversed: Boolean, val twoSided: TwoSided) : JobState
 }
 
 /** State and actions for the print screen. USB and rendering work always runs on Dispatchers.IO. */
@@ -139,6 +140,9 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     /** How the sheets split into front and back passes, or null when two-sided printing is off or there is only one side. */
     val duplexPlan: DuplexPlan? get() = DuplexPlan.of(sheetCount, options.twoSided, options.reverseBacks)
 
+    /** Follows the printer being plugged in or out, so the status card is always current. */
+    private val usbWatcher = UsbWatcher(app) { refreshPrinter() }
+
     fun refreshPrinter() {
         device = usb.findPrinter()
         printerName = device?.let { listOfNotNull(it.manufacturerName, it.productName).joinToString(" ").ifBlank { "USB printer" } }
@@ -153,6 +157,25 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     fun updateOptions(o: PrintOptions) { options = o; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
     fun setRange(text: String) { rangeText = text; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
     fun updateParity(p: Parity) { parity = p; invalidateThumbs(); pageIndex = pageIndex.coerceIn(0, sheetCount - 1); renderPreview() }
+
+    /**
+     * Takes the pages on [sheet] out of the pages to print. The file is untouched; the chosen pages are rewritten as a range
+     * (for example "1-3, 5, 8-10"), so the user can edit or clear it to bring pages back. With several pages per sheet this
+     * removes all of that sheet's pages. The last remaining sheet cannot be removed.
+     */
+    fun removeSheet(sheet: Int) {
+        val chosen = (selection as? PageSelection.Pages)?.indices ?: return
+        val n = options.perSheet.n
+        val from = (sheet * n).coerceAtMost(chosen.size)
+        val to = ((sheet + 1) * n).coerceAtMost(chosen.size)
+        val kept = chosen.filterIndexed { i, _ -> i < from || i >= to }
+        if (kept.isEmpty() || kept.size == chosen.size) return
+        rangeText = PageSelection.format(kept)
+        parity = Parity.ALL                      // the list is now explicit, so an odd/even filter would only confuse
+        invalidateThumbs()
+        pageIndex = (if (sheet < pageIndex) pageIndex - 1 else pageIndex).coerceIn(0, sheetCount - 1)
+        renderPreview()
+    }
 
     fun setPage(i: Int) { pageIndex = i.coerceIn(0, sheetCount - 1); renderPreview() }
 
@@ -284,7 +307,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
             runJob(fs, chosen, opts, dev, plan.fronts, rotate180 = false) { result ->
                 if (result is JobState.Done) {
                     pendingBacks = PendingBacks(fs, chosen, opts, plan, dev)
-                    JobState.NeedsFlip(plan.fronts.size, plan.backs.size, plan.unpairedLast, plan.reversed)
+                    JobState.NeedsFlip(plan.fronts.size, plan.backs.size, plan.unpairedLast, plan.reversed, opts.twoSided)
                 } else result
             }
         }
@@ -377,6 +400,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        usbWatcher.stop()
         runCatching { previewSource?.close() }
     }
 
