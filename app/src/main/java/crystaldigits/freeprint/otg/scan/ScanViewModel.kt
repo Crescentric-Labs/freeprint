@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import crystaldigits.freeprint.otg.HttpSession
 import crystaldigits.freeprint.otg.R
 import crystaldigits.freeprint.otg.UsbPrinter
+import crystaldigits.freeprint.otg.UsbWatcher
 import android.graphics.Bitmap
 import androidx.compose.runtime.mutableIntStateOf
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +50,9 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     var largePreview by mutableStateOf<Bitmap?>(null); private set
     private var largeOpen = false
     private var previewJob: Job? = null
+
+    /** Follows the printer being plugged in or out, so the scanner card is always current. */
+    private val usbWatcher = UsbWatcher(app) { refresh() }
 
     init {
         // Pages from an earlier run are no longer on screen, so they would only take up space.
@@ -174,6 +178,8 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun dismissMessage() { message = null }
+
+    override fun onCleared() { usbWatcher.stop() }
 
     // ---- output ----
 
