@@ -5,12 +5,12 @@ plugins {
 }
 
 android {
-    namespace = "crystaldigits.freeprint.otg"
+    namespace = "crescentric.freeprint.otg"
     compileSdk = 35
     ndkVersion = "27.2.12479018"
 
     defaultConfig {
-        applicationId = "crystaldigits.freeprint.otg"
+        applicationId = "crescentric.freeprint.otg"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
