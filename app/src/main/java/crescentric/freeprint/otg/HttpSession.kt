@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg
+package crescentric.freeprint.otg
 
 /** One HTTP response from the printer's web endpoints. */
 class HttpResult(val status: Int, val headers: String, val body: ByteArray) {
