@@ -1,4 +1,4 @@
-package crystaldigits.freeprint.otg
+package crescentric.freeprint.otg
 
 /** JNI bridge to libusb. Both calls block on USB I/O, so call them off the main thread. */
 object NativeIpp {
