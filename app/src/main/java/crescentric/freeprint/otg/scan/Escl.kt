@@ -1,7 +1,7 @@
-package crystaldigits.freeprint.otg.scan
+package crescentric.freeprint.otg.scan
 
 import androidx.annotation.StringRes
-import crystaldigits.freeprint.otg.R
+import crescentric.freeprint.otg.R
 import org.w3c.dom.Element
 import java.io.StringReader
 import javax.xml.parsers.DocumentBuilderFactory
