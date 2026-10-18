@@ -3,6 +3,9 @@ package crescentric.freeprint.otg.print
 import android.graphics.Bitmap
 import android.graphics.Matrix
 
+/** One file to open: its uri and mime type, and which of its pages (0-based) are optimized for print. */
+class FileSpec(val uri: android.net.Uri, val mime: String?, val enhancedPages: Set<Int> = emptySet())
+
 /**
  * Several documents (PDFs and images, in any mix) joined into one run of pages, in list order.
  * Page size, units and rendering are delegated to the document a page belongs to. Closing it closes all of them.
@@ -34,10 +37,10 @@ class CompositeSource(private val sources: List<PageSource>) : PageSource {
          * Opens every entry of [files] (uri to mime type). If one fails, the ones already opened are closed
          * and the exception is rethrown, so nothing leaks.
          */
-        fun open(context: android.content.Context, files: List<Pair<android.net.Uri, String?>>): CompositeSource {
+        fun open(context: android.content.Context, files: List<FileSpec>): CompositeSource {
             val opened = ArrayList<PageSource>()
             try {
-                files.forEach { (uri, mime) -> opened += PageSource.open(context, uri, mime) }
+                files.forEach { f -> opened += PageSource.open(context, f.uri, f.mime, f.enhancedPages) }
             } catch (e: Exception) {
                 opened.forEach { runCatching { it.close() } }
                 throw e
