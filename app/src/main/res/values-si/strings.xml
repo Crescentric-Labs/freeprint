@@ -27,8 +27,6 @@
     <string name="hero_body">ඕනෑම PDF හෝ රූපයක් තෝරා විකල්ප සකසා ඔබේ USB මුද්‍රණ යන්ත්‍රයෙන් සෘජුවම මුද්‍රණය කරන්න.</string>
     <string name="select_document">ලේඛන හෝ රූප තෝරන්න</string>
     <string name="add_files">ගොනු එක් කරන්න</string>
-    <string name="cd_move_up">ඉහළට ගෙන යන්න</string>
-    <string name="cd_move_down">පහළට ගෙන යන්න</string>
     <string name="files_order_hint">ගොනු පෙන්වා ඇති අනුපිළිවෙලට මුද්‍රණය වේ. PDF සහ රූප මිශ්‍ර කළ හැක.</string>
     <string name="doc_meta">%1$s • %2$s</string>
     <string name="kind_pdf">PDF ලේඛනය</string>
@@ -84,6 +82,7 @@
     <string name="about_source">මූල කේතය</string>
     <string name="about_license_gpl_title">GNU General Public License v3.0</string>
     <string name="about_license_libusb_title">libusb: GNU Lesser General Public License 2.1</string>
+    <string name="dialog_cancel">අවලංගු කරන්න</string>
     <string name="dialog_done">අවසන්</string>
     <string name="colour_opt_colour">වර්ණ</string>
     <string name="colour_opt_gray">අළු පැහැති (කළු සුදු)</string>
@@ -136,12 +135,14 @@
     <string name="printing_preparing">මුද්‍රණ කාර්යය සූදානම් කරමින්…</string>
     <string name="printing_sheet">පත්‍රය %1$d / %2$d යවමින්…</string>
     <string name="chip_per_sheet">පත්‍රයකට %1$d</string>
+    <string name="chip_odd_pages">ඔත්තේ පිටු</string>
+    <string name="chip_even_pages">ඉරට්ටේ පිටු</string>
+    <string name="chip_parity_range">%1$s · %2$s</string>
     <string name="chip_pages">පිටු %1$s</string>
     <string name="chip_two_long">දෙපැත්ත, දිගු කෙළවර</string>
     <string name="chip_two_short">දෙපැත්ත, කෙටි කෙළවර</string>
     <string name="bar_paper_mode">%1$s • %2$s</string>
     <string name="print_button">මුද්‍රණය</string>
-    <string name="printing_button">මුද්‍රණය වෙමින්…</string>
     <string name="job_done">මුද්‍රණ යන්ත්‍රයට යවන ලදී.</string>
     <string name="job_failed">මුද්‍රණය අසාර්ථකයි</string>
     <string name="job_cancelled">අවලංගු කරන ලදී.</string>
@@ -158,8 +159,6 @@
     <string name="scan_area_5x7">5 x 7 in</string>
     <string name="scan_area_4x6">4 x 6 in</string>
     <string name="scan_card_title">ලේඛනයක් ස්කෑන් කරන්න</string>
-    <string name="scan_card_body">මුද්‍රණ යන්ත්‍රයේ වීදුරුවෙන් පිටු ස්කෑන් කර PDF ලෙස සුරකින්න, නැතහොත් වහාම පිටපතක් මුද්‍රණය කරන්න.</string>
-    <string name="scan_card_button">ස්කෑනරය විවෘත කරන්න</string>
     <string name="cd_back">ආපසු</string>
     <string name="scan_title">ස්කෑන් කරන්න</string>
     <string name="scanner_loading">ස්කෑනරයට කළ හැකි දේ විමසමින්…</string>
@@ -172,12 +171,13 @@
     <string name="scan_button">පිටුව ස්කෑන් කරන්න</string>
     <string name="scan_button_next">ඊළඟ පිටුව ස්කෑන් කරන්න</string>
     <string name="scanning">ස්කෑන් කරමින්… මෙයට විනාඩියක් පමණ ගත විය හැක.</string>
-    <string name="scan_place_hint">පිටුව වීදුරුව මත මුහුණ පහළට තබා ස්කෑන් තට්ටු කරන්න.</string>
+    <string name="scan_place_hint">පිටුව වීදුරුව මත මුහුණ පහළට තබා ස්කෑන් කිරීම අරඹන්න තට්ටු කරන්න.</string>
     <string name="cd_scan_page">ස්කෑන් කළ පිටුව %1$d</string>
     <string name="scan_preview_title">ස්කෑන් පෙරදසුන</string>
     <string name="page_x_of_y">පිටුව %1$d / %2$d</string>
     <string name="scan_preview_hint">විශාල කිරීමට පිටුව තට්ටු කරන්න. පිටුව මාරු කිරීමට ස්වයිප් කරන්න.</string>
     <string name="scan_viewer_hint">විශාල කිරීමට පින්ච් කරන්න හෝ දෙවරක් තට්ටු කරන්න. පිටුව මාරු කිරීමට ස්වයිප් කරන්න.</string>
+    <string name="scan_start">ස්කෑන් කිරීම අරඹන්න</string>
     <string name="scan_empty_title">ස්කෑන් කිරීමට සූදානම්</string>
     <string name="scan_no_pages">තවම පිටු නැත</string>
     <string name="scan_bar_detail">%1$s • %2$s • %3$s</string>
@@ -187,6 +187,12 @@
     <string name="cd_remove_from_print">මුද්‍රණයෙන් ඉවත් කරන්න</string>
     <string name="cd_delete_page">පිටුව මකන්න</string>
     <string name="scan_save_pdf">PDF සුරකින්න</string>
+    <string name="scan_save">සුරකින්න</string>
+    <string name="save_title">ස්කෑන් සුරකින්න</string>
+    <string name="save_layout">කඩදාසියේ සකසන්න</string>
+    <string name="save_layout_hint">පහත සැකසුම් භාවිතයෙන් පිටු පත්‍රවල තබයි. අක්‍රිය නම් සෑම පිටුවක්ම ස්කෑන් කළ ලෙසම තබයි.</string>
+    <string name="save_as_pdf">PDF ලෙස සුරකින්න</string>
+    <string name="save_as_images">රූප ලෙස සුරකින්න</string>
     <string name="scan_share">බෙදාගන්න</string>
     <string name="scan_print">පිටපතක් මුද්‍රණය කරන්න</string>
     <string name="scan_clear">සියල්ල මකන්න</string>
@@ -213,6 +219,23 @@
     <string name="quality_draft_desc">වේගවත්ම, අඩුම තීන්ත භාවිතය. කෙටුම්පත් සඳහා සුදුසුයි.</string>
     <string name="quality_normal_desc">එදිනෙදා ලේඛන සඳහා වේගය සහ ගුණාත්මකභාවය සමතුලිතයි.</string>
     <string name="quality_high_desc">මන්දගාමීම, තියුණුම ප්‍රතිඵලය. ඡායාරූප සහ ග්‍රැෆික්ස් සඳහා උතුම්.</string>
+    <string name="setting_copies">පිටපත්</string>
+    <string name="cd_copies_less">පිටපත් අඩු කරන්න</string>
+    <string name="cd_copies_more">පිටපත් වැඩි කරන්න</string>
+    <string name="copies_hint">සෑම පිටපතක්ම සම්පූර්ණයෙන් මුද්‍රණය වේ; ඊළඟ පිටපත ආරම්භ වීමට පෙර එහි සියලු පත්‍ර මුද්‍රණය වේ.</string>
+    <string name="failed_fronts_hint">ඉදිරිපස පැති කෙසේ හෝ නිවැරදිව මුද්‍රණය වී ඇත්නම්, ඉදිරියට ගොස් පිටුපස පැති මුද්‍රණය කළ හැක.</string>
+    <string name="failed_fronts_button">කෙසේ හෝ පිටුපස පැති මුද්‍රණය කරන්න</string>
+    <string name="cd_drag_to_reorder">නැවත පෙළගැස්වීමට ඇදගෙන යන්න</string>
+    <string name="cd_enhance">මුද්‍රණය සඳහා ප්‍රශස්ත කරන්න</string>
+    <string name="cd_enhance_revert">මුද්‍රණය සඳහා ප්‍රශස්ත කර ඇත. මුල් පිටපත භාවිතා කිරීමට ඔබන්න</string>
+    <string name="pause_button">විරාම කරන්න</string>
+    <string name="resume_button">නැවත ආරම්භ කරන්න</string>
+    <string name="printing_paused">පත්‍ර %1$d / %2$d න් පසු විරාම කර ඇත</string>
+    <string name="dock_print">මුද්‍රණය</string>
+    <string name="dock_scan">ස්කෑන්</string>
+    <string name="scan_discard_title">ස්කෑන් කළ පිටු ඉවත දමන්නද?</string>
+    <string name="scan_discard_body">ස්කෑන් කළ පිටු ඉවත් කෙරේ. ඒවා අවශ්‍ය නම් මුලින් සුරකින්න හෝ බෙදාගන්න.</string>
+    <string name="scan_discard_confirm">ඉවත දමන්න</string>
     <string name="pages_reset">සියල්ල තෝරන්න</string>
     <string name="pages_tap_hint">තෝරා ගැනීමට පිටු අංක ඔබන්න</string>
     <string name="quality_draft">කෙටුම්පත</string>
@@ -268,6 +291,14 @@
     <plurals name="pages_count">
         <item quantity="one">පිටු %1$d</item>
         <item quantity="other">පිටු %1$d</item>
+    </plurals>
+    <plurals name="save_pictures">
+        <item quantity="one">රූප %1$d ක් සුරකිනු ලැබේ</item>
+        <item quantity="other">රූප %1$d ක් සුරකිනු ලැබේ</item>
+    </plurals>
+    <plurals name="copies_count">
+        <item quantity="one">පිටපත් %1$d</item>
+        <item quantity="other">පිටපත් %1$d</item>
     </plurals>
     <plurals name="sheets_count">
         <item quantity="one">පත්‍ර %1$d</item>
