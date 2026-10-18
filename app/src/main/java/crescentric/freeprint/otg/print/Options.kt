@@ -76,6 +76,8 @@ data class PrintOptions(
     val perSheet: PerSheet = PerSheet.ONE,
     val order: PageOrder = PageOrder.ACROSS,
     val twoSided: TwoSided = TwoSided.OFF,
+    /** How many complete copies to print; each copy is collated (all its sheets, then the next copy). */
+    val copies: Int = 1,
     /** Print the back sides last-to-first, for printers that stack or pick paper the other way round. */
     val reverseBacks: Boolean = false,
     /** Hairline around each page when several share a sheet. */
@@ -90,6 +92,8 @@ val PrintOptions.effectiveMarginMm: Int
     get() = marginMm ?: if (perSheet.n > 1) AUTO_NUP_MARGIN_MM else 0
 
 const val PRINT_DPI = 600
+const val MIN_COPIES = 1
+const val MAX_COPIES = 99
 const val MIN_SCALE_PERCENT = 10
 const val MAX_SCALE_PERCENT = 400
 const val MM_PER_INCH = 25.4f
