@@ -28,6 +28,29 @@
             <meta-data
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />
+
+            <!-- Share to Free Print: PDFs, pictures and plain text (notes, messages, links) from any app's share sheet -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/*" />
+                <!-- every kind of text file: .txt, .csv, .md, .log, .json... -->
+                <data android:mimeType="text/*" />
+            </intent-filter>
+
+            <!-- Open with Free Print: from a file manager, a PDF viewer, a gallery or a download -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/pdf" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="text/*" />
+            </intent-filter>
         </activity>
 
         <!-- Lets other apps (the share sheet) read the PDF built from a scan, and nothing else. -->
