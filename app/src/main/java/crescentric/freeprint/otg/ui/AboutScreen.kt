@@ -108,9 +108,9 @@ fun AboutScreen(vm: PrintViewModel, onBack: () -> Unit) {
             Card {
                 Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Image(
-                        painter = painterResource(id = R.drawable.app_icon),
+                        painter = painterResource(id = R.drawable.app_mark),
                         contentDescription = stringResource(R.string.cd_app_icon),
-                        modifier = Modifier.size(96.dp).clip(RoundedCornerShape(22.dp)),
+                        modifier = Modifier.size(112.dp),
                     )
                     Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     if (version.isNotEmpty()) {
