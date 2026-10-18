@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Behind everything, before and between screens: matches the app's surface so no white shows through a transition. -->
+    <color name="window_background">#FFFBFE</color>
+    <!-- The splash screen: the deep blue of the launcher icon, so the printer seems to float on it. -->
+    <color name="splash_background">#0D1B36</color>
+</resources>
