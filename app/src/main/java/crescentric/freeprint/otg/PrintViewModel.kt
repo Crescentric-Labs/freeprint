@@ -6,6 +6,7 @@ import android.graphics.Matrix
 import android.hardware.usb.UsbDevice
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import android.util.LruCache
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
@@ -35,6 +36,7 @@ import crescentric.freeprint.otg.print.Parity
 import crescentric.freeprint.otg.print.PrintOptions
 import crescentric.freeprint.otg.print.SelectedPages
 import crescentric.freeprint.otg.print.SheetRender
+import crescentric.freeprint.otg.print.TextPdf
 import crescentric.freeprint.otg.print.ThumbRemap
 import crescentric.freeprint.otg.print.TwoSided
 
@@ -273,6 +275,30 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
 
     fun open(uri: Uri) = replaceFiles(listOf(uri))
 
+    /** Bumped each time files arrive from outside (the share sheet, "open with"), so the screens can come back to the print tab. */
+    var externalOpenTick by mutableIntStateOf(0); private set
+
+    /** Files handed to the app by another app: they replace what was chosen and the print tab is shown. */
+    fun openFromOutside(uris: List<Uri>, text: String? = null, subject: String? = null) {
+        val ctx = getApplication<Application>()
+        viewModelScope.launch {
+            // Shared text, and shared text files, become a PDF first so they print like everything else
+            val ready = withContext(Dispatchers.IO) {
+                val out = ArrayList<Uri>()
+                if (!text.isNullOrBlank()) out += Uri.fromFile(TextPdf.render(ctx, text, subject))
+                for (u in uris) {
+                    val type = runCatching { ctx.contentResolver.getType(u) }.getOrNull()
+                    if (type != null && type.startsWith("text/")) {
+                        val body = runCatching { ctx.contentResolver.openInputStream(u)?.bufferedReader()?.use { it.readText() } }.getOrNull()
+                        if (!body.isNullOrBlank()) out += Uri.fromFile(TextPdf.render(ctx, body, null)) else out += u
+                    } else out += u
+                }
+                out
+            }
+            if (ready.isNotEmpty()) { replaceFiles(ready); externalOpenTick++ }
+        }
+    }
+
     /** Replaces the chosen files. */
     fun replaceFiles(uris: List<Uri>) = loadFiles(uris, append = false)
 
@@ -308,7 +334,10 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Reads a file's name, type and page count (opening it proves it is readable). */
     private fun describe(ctx: Application, uri: Uri): Doc {
+        // A file:// address (a PDF built from a scan, a file opened with the app) has no content type from the resolver; go by its extension
         val mime = ctx.contentResolver.getType(uri)
+            ?: MimeTypeMap.getFileExtensionFromUrl(uri.toString()).lowercase().takeIf { it.isNotEmpty() }
+                ?.let { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) }
         val name = ctx.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
             ?.use { c -> if (c.moveToFirst()) c.getString(0) else null } ?: uri.lastPathSegment ?: "document"
         PageSource.open(ctx, uri, mime).use { return Doc(uri, name, mime, it.pageCount) }
