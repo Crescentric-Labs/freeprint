@@ -21,13 +21,13 @@ object JobRunner {
      * Returns null on success, [CANCELLED], or a short error message. [progress] gets (position in this job, sheets in this job).
      * [cancelled] is checked before every band; a cancelled job is simply abandoned mid-stream.
      *
-     * [sheets] picks which sheets to print and in what order (0-based); null means all, in order. [rotate180] turns every
+     * [paused] is polled between sheets; while it is true the job waits. [sheets] picks which sheets to print and in what order (0-based); null means all, in order. [rotate180] turns every
      * printed sheet half a turn, used for the backs of two-sided pages that are flipped on the short edge.
      */
     fun run(
         source: PageSource, options: PrintOptions, session: PrintSession, copies: Int = 1,
         sheets: List<Int>? = null, rotate180: Boolean = false,
-        cancelled: () -> Boolean = { false }, progress: (Int, Int) -> Unit = { _, _ -> },
+        cancelled: () -> Boolean = { false }, paused: () -> Boolean = { false }, progress: (Int, Int) -> Unit = { _, _ -> },
     ): String? {
         val paper = options.paper
         if (source.pageCount == 0) return "The document has no pages."
@@ -40,6 +40,9 @@ object JobRunner {
             try {
                 val order = sheets ?: (0 until composer.sheetCount).toList()
                 for ((position, sheet) in order.withIndex()) {
+                    // Pausing takes effect between sheets: the one being sent finishes, then nothing more goes out until resumed
+                    while (position > 0 && paused() && !cancelled()) Thread.sleep(150)
+                    if (cancelled()) return CANCELLED
                     progress(position + 1, order.size)
                     if (!session.beginPage(paper.widthPx, paper.heightPx, PRINT_DPI, paper.widthPt, paper.heightPt))
                         return "Could not start sheet ${sheet + 1}: ${session.error}"
@@ -48,11 +51,11 @@ object JobRunner {
                         if (cancelled()) return CANCELLED
                         val rows = min(BAND_ROWS, paper.heightPx - top)
                         val band = if (turned == null) {
-                            composer.renderRows(sheet, top, rows, bitmap)
+                            render(composer, sheet, top, rows, bitmap)
                             bitmap
                         } else {
                             // The bottom of the sheet comes first when it is turned half a turn, and each strip is itself turned.
-                            composer.renderRows(sheet, paper.heightPx - top - rows, rows, bitmap)
+                            render(composer, sheet, paper.heightPx - top - rows, rows, bitmap)
                             rotateHalfTurn(bitmap, turned, rows)
                             turned
                         }
@@ -69,6 +72,11 @@ object JobRunner {
             }
         }
         return null
+    }
+
+    /** Draws a strip of [sheet], or plain white for [DuplexPlan.BLANK]. */
+    private fun render(composer: SheetComposer, sheet: Int, top: Int, rows: Int, out: Bitmap) {
+        if (sheet == DuplexPlan.BLANK) out.eraseColor(android.graphics.Color.WHITE) else composer.renderRows(sheet, top, rows, out)
     }
 
     /** Copies the first [rows] rows of [from] into [to], turned half a turn about the middle of that strip. */
