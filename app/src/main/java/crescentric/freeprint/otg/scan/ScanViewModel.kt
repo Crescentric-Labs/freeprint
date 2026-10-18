@@ -2,6 +2,18 @@ package crescentric.freeprint.otg.scan
 
 import android.app.Application
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
+import android.graphics.Paint
+import android.provider.DocumentsContract
+import crescentric.freeprint.otg.print.CompositeSource
+import crescentric.freeprint.otg.print.DocEnhance
+import crescentric.freeprint.otg.print.FileSpec
+import crescentric.freeprint.otg.print.PRINT_DPI
+import crescentric.freeprint.otg.print.PrintOptions
+import crescentric.freeprint.otg.print.SheetRender
+import java.io.ByteArrayOutputStream
 import android.hardware.usb.UsbDevice
 import android.net.Uri
 import androidx.compose.runtime.getValue
@@ -22,7 +34,10 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** One scanned page kept on disk as the scanner's own JPEG. */
-class ScanPage(val file: File, val widthPx: Int, val heightPx: Int, val gray: Boolean, val dpi: Int)
+class ScanPage(val file: File, val widthPx: Int, val heightPx: Int, val gray: Boolean, val dpi: Int, val enhance: Boolean = false) {
+    /** The same page with "optimize for print" switched on or off; the scanner's JPEG on disk is never altered. */
+    fun withEnhance(on: Boolean) = ScanPage(file, widthPx, heightPx, gray, dpi, on)
+}
 
 /** A decoded preview of one scanned page, with the page number it shows so the UI can animate in the right direction. */
 class ScanPreviewImage(val index: Int, val bitmap: Bitmap)
@@ -127,6 +142,14 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Turns "optimize for print" on or off for the page at [index]; only that page's picture is drawn again. */
+    fun toggleEnhance(index: Int) {
+        val p = pages.getOrNull(index) ?: return
+        pages = pages.mapIndexed { i, d -> if (i == index) p.withEnhance(!p.enhance) else d }
+        saved = false
+        if (index == pageIndex) renderPreview()
+    }
+
     /** The user moves to another page: show it and centre it in the strip. */
     fun selectPage(index: Int) {
         pageScrollTick++
@@ -192,18 +215,19 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
         val large = largeOpen
         previewJob?.cancel()
         previewJob = viewModelScope.launch(Dispatchers.IO) {
-            val bmp = decode(page.file, if (large) LARGE_SIDE else PREVIEW_SIDE) ?: return@launch
+            val bmp = decode(page.file, if (large) LARGE_SIDE else PREVIEW_SIDE, page.enhance) ?: return@launch
             if (large) largeImage = ScanPreviewImage(index, bmp) else preview = ScanPreviewImage(index, bmp)
         }
     }
 
     /** A JPEG decoded no larger than needed: a 600 dpi A4 colour page would otherwise be 140 MB. */
-    private fun decode(file: File, longestSide: Int): Bitmap? {
+    private fun decode(file: File, longestSide: Int, enhance: Boolean = false): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
         var sample = 1
         while (maxOf(bounds.outWidth, bounds.outHeight) / sample > longestSide) sample *= 2
-        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })
+        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample; inMutable = enhance })
+            ?.also { if (enhance) DocEnhance.apply(it) }
     }
 
     fun dismissMessage() { message = null }
@@ -212,14 +236,101 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- output ----
 
-    /** A PDF of all pages, one per page, written to the cache; returns it. Call off the main thread. */
-    fun buildPdf(): File {
+    // ---- what to save: pages as scanned, or laid out on paper sheets ----
+
+    /** When on, saving puts the pages on sheets of paper using [saveOptions] (pages per sheet, fit, margins...); when off, each page is saved as scanned. */
+    var saveLayout by mutableStateOf(false); private set
+    /** The layout settings used when [saveLayout] is on. Defaults to A4, one page per sheet, fitted, no margin. */
+    var saveOptions by mutableStateOf(PrintOptions()); private set
+
+    fun useSaveLayout(on: Boolean) { saveLayout = on }
+    fun updateSaveOptions(o: PrintOptions) { saveOptions = o }
+
+    /** How many pictures saving would produce: one per page as scanned, or one per sheet when laid out. */
+    val outputCount: Int
+        get() = if (!saveLayout) pages.size else ((pages.size + saveOptions.perSheet.n - 1) / saveOptions.perSheet.n).coerceAtLeast(1)
+
+    /**
+     * Every picture the output is made of, as JPEGs. As scanned, a page the user did not optimize is the scanner's own JPEG, byte for
+     * byte; an optimized one is decoded, enhanced and encoded again. Laid out, each sheet is drawn at 300 dpi by the same code the
+     * print preview and print job use. Call off the main thread.
+     */
+    private fun outputImages(laidOut: Boolean): List<PdfPageImage> {
+        if (!laidOut) return pages.map { p ->
+            if (!p.enhance) PdfPageImage(p.file.readBytes(), p.widthPx, p.heightPx, p.gray, p.dpi)
+            else {
+                val bmp = decodeFull(p.file).also { DocEnhance.apply(it) }
+                try { PdfPageImage(encode(bmp), bmp.width, bmp.height, false, p.dpi) } finally { bmp.recycle() }
+            }
+        }
+        val o = saveOptions
+        val ctx = getApplication<Application>()
+        val specs = pages.map { FileSpec(Uri.fromFile(it.file), "image/jpeg", if (it.enhance) setOf(0) else emptySet()) }
+        return CompositeSource.open(ctx, specs).use { src ->
+            val width = (o.paper.widthPx * SAVE_SCALE).toInt()
+            val sheets = ((pages.size + o.perSheet.n - 1) / o.perSheet.n).coerceAtLeast(1)
+            (0 until sheets).map { i ->
+                val sheet = SheetRender.compose(src, o, i, width)
+                if (!o.color) toGray(sheet)
+                try { PdfPageImage(encode(sheet), sheet.width, sheet.height, false, (PRINT_DPI * SAVE_SCALE).toInt()) } finally { sheet.recycle() }
+            }
+        }
+    }
+
+    private fun toGray(bmp: Bitmap) {
+        val paint = Paint().apply { colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }) }
+        val copy = bmp.copy(Bitmap.Config.ARGB_8888, false)
+        Canvas(bmp).drawBitmap(copy, 0f, 0f, paint)
+        copy.recycle()
+    }
+
+    private fun encode(bmp: Bitmap): ByteArray = ByteArrayOutputStream().also { bmp.compress(Bitmap.CompressFormat.JPEG, 92, it) }.toByteArray()
+
+    /** A page decoded for editing, no larger than [FULL_SIDE] along its longer side. */
+    private fun decodeFull(file: File): Bitmap {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.path, bounds)
+        var sample = 1
+        while (maxOf(bounds.outWidth, bounds.outHeight) / sample > FULL_SIDE) sample *= 2
+        return BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample; inMutable = true })!!
+    }
+
+    /**
+     * A PDF of the pages, written to the cache; returns it. [withLayout] follows the save settings; pass false for a plain
+     * one-page-per-scan PDF (used when printing a copy, since the print screen has its own layout settings). Call off the main thread.
+     */
+    fun buildPdf(withLayout: Boolean = saveLayout): File {
         dir.mkdirs()
         val file = File(dir, "scan-${System.currentTimeMillis()}.pdf")
-        file.outputStream().use { out ->
-            JpegPdf.write(pages.map { PdfPageImage(it.file.readBytes(), it.widthPx, it.heightPx, it.gray, it.dpi) }, out)
-        }
+        val images = outputImages(withLayout)
+        file.outputStream().use { out -> JpegPdf.write(images, out) }
         return file
+    }
+
+    /** Writes the pictures as JPEG files: into the single file [target], or, for several, into the folder [target] (a document tree). */
+    fun saveImages(target: Uri, folder: Boolean, done: (Boolean) -> Unit = {}) {
+        if (pages.isEmpty()) return
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val resolver = getApplication<Application>().contentResolver
+                    val images = outputImages(saveLayout)
+                    if (!folder) {
+                        resolver.openOutputStream(target)!!.use { it.write(images.first().jpeg) }
+                    } else {
+                        val parent = DocumentsContract.buildDocumentUriUsingTree(target, DocumentsContract.getTreeDocumentId(target))
+                        val stamp = System.currentTimeMillis() / 1000
+                        images.forEachIndexed { i, img ->
+                            val doc = DocumentsContract.createDocument(resolver, parent, "image/jpeg", "scan-$stamp-${i + 1}.jpg")!!
+                            resolver.openOutputStream(doc)!!.use { it.write(img.jpeg) }
+                        }
+                    }
+                }.isSuccess
+            }
+            saved = ok
+            if (!ok) message = ScanMessage(R.string.scan_err_save)
+            done(ok)
+        }
     }
 
     /** Copies a file into the place the user picked with the system file dialog. */
@@ -237,10 +348,10 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Builds the PDF in the background and hands it to [done] on the main thread. */
-    fun withPdf(done: (File) -> Unit) {
+    fun withPdf(withLayout: Boolean = saveLayout, done: (File) -> Unit) {
         if (pages.isEmpty()) return
         viewModelScope.launch {
-            runCatching { withContext(Dispatchers.IO) { buildPdf() } }
+            runCatching { withContext(Dispatchers.IO) { buildPdf(withLayout) } }
                 .onSuccess(done)
                 .onFailure { message = ScanMessage(R.string.scan_err_save, detail = it.message.orEmpty()) }
         }
@@ -276,6 +387,8 @@ class ScanViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         const val PREVIEW_SIDE = 1100
         const val LARGE_SIDE = 2200
+        const val FULL_SIDE = 5000          // longest side when a page is edited for saving
+        const val SAVE_SCALE = 0.5f         // laid-out sheets are drawn at 300 dpi (the print raster is 600)
     }
 
     /** Keeps the chosen settings inside what this scanner offers (resolution list, colour modes). */
