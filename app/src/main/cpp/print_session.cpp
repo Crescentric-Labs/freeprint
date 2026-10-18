@@ -94,7 +94,8 @@ public:
         std::string log;
         if (!flushChunk() || !writeAll(h_, ep_.out, reinterpret_cast<const uint8_t *>("0\r\n\r\n"), 5, err_))
             return err_;
-        Bytes resp = readResponse(h_, ep_.in, err_);
+        // The printer answers once it has taken the whole job, which for a long one can be minutes after the last byte was sent
+        Bytes resp = readResponse(h_, ep_.in, err_, 5 * 60 * 1000);
         int st = ippStatus(resp);
         char buf[64];
         snprintf(buf, sizeof buf, "IPP status: 0x%04x\n", st < 0 ? 0xffff : st);
