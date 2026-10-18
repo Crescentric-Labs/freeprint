@@ -10,6 +10,28 @@ import org.junit.Test
 class DuplexPlanTest {
     private fun plan(sheets: Int, mode: TwoSided = TwoSided.LONG_EDGE, reverse: Boolean = false) = DuplexPlan.of(sheets, mode, reverse)!!
 
+    @Test fun copiesRepeatTheFrontsAndBacksInStep() {
+        val p = DuplexPlan.of(4, TwoSided.LONG_EDGE, false, copies = 2)!!
+        assertEquals(listOf(0, 2, 0, 2), p.fronts)
+        assertEquals(listOf(1, 3, 1, 3), p.backs)
+    }
+
+    @Test fun anOddCopyGetsABlankBackSoLaterCopiesStayAligned() {
+        val p = DuplexPlan.of(3, TwoSided.LONG_EDGE, false, copies = 2)!!
+        assertEquals(listOf(0, 2, 0, 2), p.fronts)
+        assertEquals(listOf(1, DuplexPlan.BLANK, 1, DuplexPlan.BLANK), p.backs)
+        assertFalse(p.unpairedLast)
+        // one copy keeps the plain behaviour: no blank, and the last front is reported as unpaired
+        val one = DuplexPlan.of(3, TwoSided.LONG_EDGE, false, copies = 1)!!
+        assertEquals(listOf(1), one.backs)
+        assertTrue(one.unpairedLast)
+    }
+
+    @Test fun reversingBacksReversesTheWholeStack() {
+        val p = DuplexPlan.of(4, TwoSided.LONG_EDGE, true, copies = 2)!!
+        assertEquals(listOf(3, 1, 3, 1), p.backs)
+    }
+
     @Test fun offMeansNoPlan() = assertNull(DuplexPlan.of(6, TwoSided.OFF, false))
 
     @Test fun oneSideNeedsNoTurningOver() {
