@@ -96,6 +96,8 @@ private enum class HomeTab(val icon: ImageVector, val labelRes: Int) {
 fun HomeScreen(vm: PrintViewModel, scanVm: ScanViewModel, onOpenAbout: () -> Unit) {
     var tab by rememberSaveable { mutableStateOf(HomeTab.PRINT) }
     var showLanguage by remember { mutableStateOf(false) }
+    // Files shared or opened from another app go to the print tab
+    androidx.compose.runtime.LaunchedEffect(vm.externalOpenTick) { if (vm.externalOpenTick > 0) tab = HomeTab.PRINT }
     var confirmDiscardScan by remember { mutableStateOf(false) }
 
     val hasContent = when (tab) {
