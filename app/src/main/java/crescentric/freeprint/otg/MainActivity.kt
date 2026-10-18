@@ -1,6 +1,10 @@
 package crescentric.freeprint.otg
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.IntentCompat
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -49,11 +53,13 @@ class MainActivity : ComponentActivity() {
         // Must come before super.onCreate: swaps the starting theme for the app's, and takes over the splash's exit
         installSplashScreen().setOnExitAnimationListener { splash ->
             // The icon swells a little and fades while the blue backdrop fades away over the app
-            val icon = splash.iconView
-            icon.animate().scaleX(1.25f).scaleY(1.25f).alpha(0f).setDuration(380).setInterpolator(AccelerateDecelerateInterpolator()).start()
+            // The system gives no icon view when it did not draw one (for example when the app is opened from a share), so it may be null
+            val icon: android.view.View? = try { splash.iconView } catch (e: Exception) { null }
+            icon?.animate()?.scaleX(1.25f)?.scaleY(1.25f)?.alpha(0f)?.setDuration(380)?.setInterpolator(AccelerateDecelerateInterpolator())?.start()
             splash.view.animate().alpha(0f).setStartDelay(120).setDuration(320).withEndAction { splash.remove() }.start()
         }
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) handleIncoming(intent)
         enableEdgeToEdge()
         setContent {
             val dark = isSystemInDarkTheme()
@@ -64,6 +70,8 @@ class MainActivity : ComponentActivity() {
                 else -> lightColorScheme()
             }
             var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
+            // Files that arrive from another app are shown on the print tab, whatever was open
+            LaunchedEffect(vm.externalOpenTick) { if (vm.externalOpenTick > 0) screen = Screen.HOME }
             MaterialTheme(colorScheme = scheme) {
               // A solid base under the sliding screens: while one fades or slides, what shows through is this, not the window
               Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -93,6 +101,27 @@ class MainActivity : ComponentActivity() {
               }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncoming(intent)
+    }
+
+    /** Opens what was shared to the app or opened with it: PDFs, pictures and text. Anything else is ignored. */
+    private fun handleIncoming(intent: Intent?) {
+        val uris: List<Uri> = when (intent?.action) {
+            Intent.ACTION_SEND -> listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java))
+            Intent.ACTION_SEND_MULTIPLE -> IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+            Intent.ACTION_VIEW -> listOfNotNull(intent.data)
+            else -> return
+        }
+        // Some apps share through the clip data instead of the extra
+        val found = uris.ifEmpty { intent?.clipData?.let { c -> (0 until c.itemCount).mapNotNull { c.getItemAt(it).uri } }.orEmpty() }
+        // Text shared on its own (a note, a message, a link) is printed as it is
+        val text = if (intent?.action == Intent.ACTION_SEND && found.isEmpty()) intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString() else null
+        vm.openFromOutside(found, text, intent?.getStringExtra(Intent.EXTRA_SUBJECT))
     }
 
     override fun onResume() {
