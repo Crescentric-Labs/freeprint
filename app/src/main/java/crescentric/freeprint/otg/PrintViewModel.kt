@@ -16,6 +16,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -27,13 +29,21 @@ import crescentric.freeprint.otg.print.Orientation
 import crescentric.freeprint.otg.print.SheetComposer
 import crescentric.freeprint.otg.print.PageSource
 import crescentric.freeprint.otg.print.PageSelection
+import crescentric.freeprint.otg.print.FileSpec
+import crescentric.freeprint.otg.print.PageLocator
 import crescentric.freeprint.otg.print.Parity
 import crescentric.freeprint.otg.print.PrintOptions
 import crescentric.freeprint.otg.print.SelectedPages
+import crescentric.freeprint.otg.print.SheetRender
 import crescentric.freeprint.otg.print.ThumbRemap
 import crescentric.freeprint.otg.print.TwoSided
 
-class Doc(val uri: Uri, val name: String, val mime: String?, val pageCount: Int)
+/** A chosen file. [enhancedPages] are the pages (0-based, within this file) that are optimized for print. */
+class Doc(val uri: Uri, val name: String, val mime: String?, val pageCount: Int, val enhancedPages: Set<Int> = emptySet()) {
+    val isImage get() = mime?.startsWith("image/") == true
+    fun withEnhancedPages(pages: Set<Int>) = Doc(uri, name, mime, pageCount, pages)
+    val spec get() = FileSpec(uri, mime, enhancedPages)
+}
 
 /** A rendered preview together with the sheet it shows, so the UI can tell which way the sheet changed. */
 class PreviewImage(val sheet: Int, val bitmap: Bitmap)
@@ -120,11 +130,14 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         val chosen = (selection as? PageSelection.Pages)?.indices
         if (chosen == null) { thumbPending.remove(sheet); return }
         viewModelScope.launch(Dispatchers.IO) {
+            // The sheet on show has priority: thumbnails wait while it is being drawn
+            while (previewJob?.isActive == true) delay(30)
             val bmp = runCatching {
                 sourceLock.withLock { previewSource?.let { composeSheet(SelectedPages(it, chosen), o, sheet, THUMB_WIDTH) } }
             }.getOrNull()
             withContext(Dispatchers.Main) {
                 thumbPending.remove(sheet)
+                if (staleThumbs.remove(sheet)) { thumbVersion++; return@withContext }   // drawn from the old source; the strip asks again
                 if (bmp != null && gen == thumbGeneration) { thumbCache.put(sheet, bmp); thumbVersion++ }
             }
         }
@@ -136,6 +149,7 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
      */
     private fun remapThumbsAfterRemoving(sheet: Int) {
         val old = thumbCache.snapshot()
+        previewCache.evictAll()
         thumbGeneration++                       // anything still being drawn was drawn for the old numbering
         thumbPending.clear()
         thumbCache.evictAll()
@@ -148,16 +162,31 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Drops every thumbnail; called when the document, the options or the page selection change. */
     private fun invalidateThumbs() {
+        previewCache.evictAll()
         thumbGeneration++
         thumbCache.evictAll()
         thumbPending.clear()
         thumbVersion++
     }
 
+    /** How many sides the printer will actually be sent when Print is tapped: every copy of every sheet, plus any blank backs. */
+    val printTotal: Int get() = duplexPlan?.let { it.fronts.size + it.backs.size } ?: (sheetCount * options.copies)
+
+    /** True while a running job is held between sheets; see [togglePause]. */
+    var paused by mutableStateOf(false); private set
+    @Volatile private var pauseFlag = false
+
+    /** Holds the running job after the sheet being sent, or lets it carry on. A long pause may make the printer give up on the job. */
+    fun togglePause() {
+        if (job !is JobState.Printing) return
+        pauseFlag = !pauseFlag
+        paused = pauseFlag
+    }
+
     val canPrint get() = doc != null && hasPermission && job !is JobState.Printing && job !is JobState.NeedsFlip && selection is PageSelection.Pages
 
     /** How the sheets split into front and back passes, or null when two-sided printing is off or there is only one side. */
-    val duplexPlan: DuplexPlan? get() = DuplexPlan.of(sheetCount, options.twoSided, options.reverseBacks)
+    val duplexPlan: DuplexPlan? get() = DuplexPlan.of(sheetCount, options.twoSided, options.reverseBacks, options.copies)
 
     /** Follows the printer being plugged in or out, so the status card is always current. */
     private val usbWatcher = UsbWatcher(app) { refreshPrinter() }
@@ -255,11 +284,10 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         applyFiles(files.filterIndexed { i, _ -> i != index }, keepPage = true)
     }
 
-    /** Moves file [index] earlier (delta -1) or later (delta +1) in the print order. */
-    fun moveFile(index: Int, delta: Int) {
-        val to = index + delta
-        if (index !in files.indices || to !in files.indices) return
-        applyFiles(files.toMutableList().apply { add(to, removeAt(index)) }, keepPage = true)
+    /** Moves the file at [from] to position [to] (a drag in the file list). */
+    fun moveFileTo(from: Int, to: Int) {
+        if (from !in files.indices || to !in files.indices || from == to) return
+        applyFiles(files.toMutableList().apply { add(to, removeAt(from)) }, keepPage = true)
     }
 
     private fun loadFiles(uris: List<Uri>, append: Boolean) {
@@ -300,22 +328,89 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
             largeImage = null
             job = JobState.Idle
         }
+        reopenSource(list)
+    }
+
+    /** The pages on [sheet] as (file index, page inside that file); several pages share a sheet when printing n-up. */
+    private fun pagesOnSheet(sheet: Int): List<Pair<Int, Int>> {
+        val chosen = (selection as? PageSelection.Pages)?.indices ?: return emptyList()
+        val n = options.perSheet.n
+        val counts = files.map { it.pageCount }
+        return (sheet * n until minOf((sheet + 1) * n, chosen.size)).mapNotNull { PageLocator.locate(counts, chosen[it]) }
+    }
+
+    /** True when every page on [sheet] is optimized for print. */
+    fun isSheetEnhanced(sheet: Int): Boolean {
+        enhanceVersion
+        val pages = pagesOnSheet(sheet)
+        return pages.isNotEmpty() && pages.all { (f, p) -> p in files[f].enhancedPages }
+    }
+
+    /** True when [sheet] has any page that "optimize for print" can be switched on or off for. */
+    fun canEnhanceSheet(sheet: Int) = pagesOnSheet(sheet).isNotEmpty()
+
+    /**
+     * Turns "optimize for print" on for the pages on [sheet], or off again if they all already have it. Only those pages change,
+     * not the rest of their file, and the original is never altered.
+     */
+    fun toggleEnhanceSheet(sheet: Int) {
+        val pages = pagesOnSheet(sheet).takeIf { it.isNotEmpty() } ?: return
+        val turnOn = !isSheetEnhanced(sheet)
+        files = files.mapIndexed { i, d ->
+            val mine = pages.filter { it.first == i }.map { it.second }
+            if (mine.isEmpty()) d else d.withEnhancedPages(if (turnOn) d.enhancedPages + mine else d.enhancedPages - mine.toSet())
+        }
+        enhanceVersion++
+        // Only this sheet looks different now, so only its thumbnail and preview are drawn again; the rest of the strip stays put
+        reopenSource(files) { invalidateSheet(sheet); renderPreview() }
+    }
+
+    /** Bumped when a page's optimized state changes, so composables reading [isSheetEnhanced] redraw. */
+    private var enhanceVersion by mutableIntStateOf(0)
+
+    /** Drops the cached thumbnail and previews of one [sheet] so they are drawn again, leaving every other sheet's as they are. */
+    private fun invalidateSheet(sheet: Int) {
+        thumbCache.remove(sheet)
+        previewCache.remove(previewKey(sheet, false))
+        previewCache.remove(previewKey(sheet, true))
+        // A thumbnail of this sheet being drawn right now was drawn from the old source: throw it away when it lands, and draw it again
+        if (sheet in thumbPending) staleThumbs += sheet
+        thumbPending.remove(sheet)
+        thumbVersion++
+    }
+    private val staleThumbs = HashSet<Int>()       // main thread only
+
+    /**
+     * Opens the files as the preview source on a background thread, then runs [onInstalled] on the main thread. By default that
+     * redraws every thumbnail and the preview; pass something narrower when only part of the picture changed.
+     */
+    private fun reopenSource(list: List<Doc>, onInstalled: () -> Unit = { invalidateThumbs(); renderPreview() }) {
+        val ctx = getApplication<Application>()
         viewModelScope.launch(Dispatchers.IO) {
             val source = if (list.isEmpty()) null else runCatching {
-                CompositeSource.open(ctx, list.map { it.uri to it.mime })
+                CompositeSource.open(ctx, list.map { it.spec })
             }.getOrNull()
             sourceLock.withLock { previewSource?.close(); previewSource = source }
             if (list.isNotEmpty() && source == null) {
                 job = JobState.Failed(list.joinToString(", ") { it.name }, R.string.err_open_file)
             } else {
-                // Thumbnails requested while the old source was still installed show the old order; drop them
-                // now that the new source is in place, then draw everything again.
-                withContext(Dispatchers.Main) { invalidateThumbs(); renderPreview() }
+                // Thumbnails requested while the old source was still installed show the old order or look; drop what changed
+                // now that the new source is in place, then draw it again.
+                withContext(Dispatchers.Main) { onInstalled() }
             }
         }
     }
 
     fun clearDoc() = applyFiles(emptyList(), keepPage = false)
+
+    /** Puts printing back to how the app starts: no files, no page choice, default settings, no job or two-sided state. */
+    fun resetAll() {
+        pendingBacks = null
+        pauseFlag = false; paused = false
+        options = PrintOptions()
+        job = JobState.Idle
+        clearDoc()
+    }
 
     /** Opens or closes the full-screen viewer; while it is open only the large preview is kept up to date. */
     fun setLargePreviewOpen(open: Boolean) {
@@ -333,25 +428,44 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         if (chosen == null) { previewImage = null; largeImage = null; return }
         val large = largeOpen
         previewJob?.cancel()
+        val gen = thumbGeneration
+        val width = if (large) LARGE_PREVIEW_WIDTH else PREVIEW_WIDTH
+        fun show(bmp: Bitmap) { if (large) largeImage = PreviewImage(page, bmp) else previewImage = PreviewImage(page, bmp) }
+
+        // A sheet that was drawn ahead of time appears at once, so swiping onto it (an optimized page can take a moment to draw) does not wait
+        previewCache.get(previewKey(page, large))?.let { show(it) }
         previewJob = viewModelScope.launch(Dispatchers.IO) {
-            val bmp = sourceLock.withLock {
-                val src = previewSource ?: return@withLock null
-                composeSheet(SelectedPages(src, chosen), o, page, if (large) LARGE_PREVIEW_WIDTH else PREVIEW_WIDTH)
+            if (previewCache.get(previewKey(page, large)) == null) {
+                val bmp = sourceLock.withLock {
+                    val src = previewSource ?: return@withLock null
+                    composeSheet(SelectedPages(src, chosen), o, page, width)
+                }
+                if (bmp != null) {
+                    if (gen == thumbGeneration) previewCache.put(previewKey(page, large), bmp)
+                    show(bmp)
+                }
             }
-            if (bmp != null) { if (large) largeImage = PreviewImage(page, bmp) else previewImage = PreviewImage(page, bmp) }
+            // Then draw the neighbours quietly, so the next swipe either way is instant
+            for (next in listOf(page + 1, page - 1)) {
+                if (!isActive || gen != thumbGeneration || next !in 0 until sheetCount) continue
+                if (previewCache.get(previewKey(next, large)) != null) continue
+                val bmp = sourceLock.withLock {
+                    val src = previewSource ?: return@withLock null
+                    composeSheet(SelectedPages(src, chosen), o, next, width)
+                }
+                if (bmp != null && gen == thumbGeneration) previewCache.put(previewKey(next, large), bmp)
+            }
         }
     }
 
-    /** One sheet as the reader sees it, [width] pixels wide. Caller holds [sourceLock]. */
-    private fun composeSheet(src: PageSource, o: PrintOptions, page: Int, width: Int): Bitmap {
-        val scale = width.toFloat() / o.paper.widthPx
-        return SheetComposer(src, o, scale, maxRows = (o.paper.heightPx * scale).toInt()).use { composer ->
-            val out = Bitmap.createBitmap(composer.width, composer.height, Bitmap.Config.ARGB_8888)
-            composer.renderRows(page.coerceAtMost(composer.sheetCount - 1), 0, composer.height, out)
-            // The raster is the landscape sheet turned a quarter turn counter-clockwise; turn it back clockwise to show it as read.
-            if (composer.landscape) Bitmap.createBitmap(out, 0, 0, out.width, out.height, Matrix().apply { postRotate(90f) }, true) else out
-        }
+    /** Previews drawn already (the sheet on show and its neighbours), in the small and the full-screen size. */
+    private val previewCache = object : LruCache<Int, Bitmap>(PREVIEW_CACHE_BYTES) {
+        override fun sizeOf(key: Int, value: Bitmap) = value.byteCount
     }
+    private fun previewKey(sheet: Int, large: Boolean) = if (large) sheet + LARGE_KEY_OFFSET else sheet
+
+    /** One sheet as the reader sees it, [width] pixels wide. Caller holds [sourceLock]. */
+    private fun composeSheet(src: PageSource, o: PrintOptions, page: Int, width: Int): Bitmap = SheetRender.compose(src, o, page, width)
 
     /** What the second pass of a two-sided job needs, captured when the first pass starts so nothing changes in between. */
     private class PendingBacks(val files: List<Doc>, val chosen: List<Int>, val options: PrintOptions, val plan: DuplexPlan, val device: UsbDevice)
@@ -366,15 +480,31 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         val plan = duplexPlan
         pendingBacks = null
         if (plan == null) {
-            runJob(fs, chosen, opts, dev, sheets = null, rotate180 = false) { it }
+            // Copies are collated by repeating the sheet list, so they do not depend on the printer honouring a copies setting
+            val sheets = if (opts.copies > 1) List(opts.copies) { (0 until sheetCount).toList() }.flatten() else null
+            runJob(fs, chosen, opts, dev, sheets = sheets, rotate180 = false) { it }
         } else {
             runJob(fs, chosen, opts, dev, plan.fronts, rotate180 = false) { result ->
                 if (result is JobState.Done) {
                     pendingBacks = PendingBacks(fs, chosen, opts, plan, dev)
                     JobState.NeedsFlip(plan.fronts.size, plan.backs.size, plan.unpairedLast, plan.reversed, opts.twoSided)
-                } else result
+                } else {
+                    // A failure here can be the printer's reply going missing after it printed the fronts all the same,
+                    // so keep the backs available; the user decides whether to carry on (see resumeAfterFailedFronts)
+                    if (result is JobState.Failed) pendingBacks = PendingBacks(fs, chosen, opts, plan, dev)
+                    result
+                }
             }
         }
+    }
+
+    /** True when the front sides reported a failure but the back sides can still be printed on the user's say-so. */
+    val backsAfterFailure: Boolean get() = job is JobState.Failed && pendingBacks != null
+
+    /** The fronts reported a failure but came out fine: go on to the flip instructions, then the backs, as if they had succeeded. */
+    fun resumeAfterFailedFronts() {
+        val p = pendingBacks ?: return
+        job = JobState.NeedsFlip(p.plan.fronts.size, p.plan.backs.size, p.plan.unpairedLast, p.plan.reversed, p.options.twoSided)
     }
 
     /** The user has turned the stack over: print the back sides, turned half a turn when flipping on the short edge. */
@@ -396,17 +526,19 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         sheets: List<Int>?, rotate180: Boolean, finish: (JobState) -> JobState,
     ) {
         val ctx = getApplication<Application>()
+        pauseFlag = false; paused = false
         job = JobState.Printing(0, sheets?.size ?: sheetCount)
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    CompositeSource.open(ctx, fs.map { it.uri to it.mime }).use { src ->
-                        JobExecutor.execute(usb, dev, SelectedPages(src, chosen), opts, sheets = sheets, rotate180 = rotate180) { p, n ->
+                    CompositeSource.open(ctx, fs.map { it.spec }).use { src ->
+                        JobExecutor.execute(usb, dev, SelectedPages(src, chosen), opts, sheets = sheets, rotate180 = rotate180, paused = { pauseFlag }) { p, n ->
                             job = JobState.Printing(p, n)
                         }
                     }
                 }.getOrElse { JobState.Failed(it.message.orEmpty()) }
             }
+            pauseFlag = false; paused = false
             job = finish(result)
         }
     }
@@ -472,6 +604,8 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         const val PREVIEW_WIDTH = 720
         const val LARGE_PREVIEW_WIDTH = 2000     // enough detail to zoom in on a phone screen
         const val THUMB_WIDTH = 200
+        const val PREVIEW_CACHE_BYTES = 72 * 1024 * 1024   // the sheet on show and its neighbours: about 3 at full-screen size, many more small ones
+        const val LARGE_KEY_OFFSET = 1_000_000
         const val THUMB_CACHE_SIZE = 80          // about 18 MB of thumbnails
     }
 }
