@@ -27,8 +27,6 @@
     <string name="hero_body">Select any PDF or image to configure options and print directly to your USB printer.</string>
     <string name="select_document">Select documents or images</string>
     <string name="add_files">Add files</string>
-    <string name="cd_move_up">Move up</string>
-    <string name="cd_move_down">Move down</string>
     <string name="files_order_hint">Files print in the order shown. PDFs and images can be mixed.</string>
     <string name="doc_meta">%1$s • %2$s</string>
     <string name="kind_pdf">PDF document</string>
@@ -84,6 +82,7 @@
     <string name="about_source">Source code</string>
     <string name="about_license_gpl_title">GNU General Public License v3.0</string>
     <string name="about_license_libusb_title">libusb: GNU Lesser General Public License 2.1</string>
+    <string name="dialog_cancel">Cancel</string>
     <string name="dialog_done">Done</string>
     <string name="colour_opt_colour">Colour</string>
     <string name="colour_opt_gray">Grayscale (black and white)</string>
@@ -136,12 +135,14 @@
     <string name="printing_preparing">Preparing print job…</string>
     <string name="printing_sheet">Sending sheet %1$d of %2$d…</string>
     <string name="chip_per_sheet">%1$d per sheet</string>
+    <string name="chip_odd_pages">Odd pages</string>
+    <string name="chip_even_pages">Even pages</string>
+    <string name="chip_parity_range">%1$s · %2$s</string>
     <string name="chip_pages">Pages %1$s</string>
     <string name="chip_two_long">Two-sided, long edge</string>
     <string name="chip_two_short">Two-sided, short edge</string>
     <string name="bar_paper_mode">%1$s • %2$s</string>
     <string name="print_button">Print</string>
-    <string name="printing_button">Printing…</string>
     <string name="job_done">Sent to the printer.</string>
     <string name="job_failed">Printing failed</string>
     <string name="job_cancelled">Cancelled.</string>
@@ -158,8 +159,6 @@
     <string name="scan_area_5x7">5 x 7 in</string>
     <string name="scan_area_4x6">4 x 6 in</string>
     <string name="scan_card_title">Scan a document</string>
-    <string name="scan_card_body">Scan pages on the printer\'s glass, save them as a PDF, or print a copy straight away.</string>
-    <string name="scan_card_button">Open scanner</string>
     <string name="cd_back">Back</string>
     <string name="scan_title">Scan</string>
     <string name="scanner_loading">Asking the scanner what it can do…</string>
@@ -172,12 +171,13 @@
     <string name="scan_button">Scan page</string>
     <string name="scan_button_next">Scan next page</string>
     <string name="scanning">Scanning… this can take up to a minute.</string>
-    <string name="scan_place_hint">Place the page face down on the glass, then tap Scan.</string>
+    <string name="scan_place_hint">Place the page face down on the glass, then tap Start scan.</string>
     <string name="cd_scan_page">Scanned page %1$d</string>
     <string name="scan_preview_title">Scan preview</string>
     <string name="page_x_of_y">Page %1$d of %2$d</string>
     <string name="scan_preview_hint">Tap the page to enlarge. Swipe to change page.</string>
     <string name="scan_viewer_hint">Pinch or double-tap to zoom. Swipe to change page.</string>
+    <string name="scan_start">Start scan</string>
     <string name="scan_empty_title">Ready to scan</string>
     <string name="scan_no_pages">No pages yet</string>
     <string name="scan_bar_detail">%1$s • %2$s • %3$s</string>
@@ -187,6 +187,12 @@
     <string name="cd_remove_from_print">Remove from print</string>
     <string name="cd_delete_page">Delete page</string>
     <string name="scan_save_pdf">Save PDF</string>
+    <string name="scan_save">Save</string>
+    <string name="save_title">Save scan</string>
+    <string name="save_layout">Lay out on paper</string>
+    <string name="save_layout_hint">Puts the pages on sheets using the settings below. Off keeps each page as scanned.</string>
+    <string name="save_as_pdf">Save as PDF</string>
+    <string name="save_as_images">Save as images</string>
     <string name="scan_share">Share</string>
     <string name="scan_print">Print a copy</string>
     <string name="scan_clear">Clear all</string>
@@ -213,6 +219,23 @@
     <string name="quality_draft_desc">Fastest, uses the least ink. Good for drafts and proofs.</string>
     <string name="quality_normal_desc">Balanced speed and quality for everyday documents.</string>
     <string name="quality_high_desc">Slowest, sharpest result. Best for photos and graphics.</string>
+    <string name="setting_copies">Copies</string>
+    <string name="cd_copies_less">Fewer copies</string>
+    <string name="cd_copies_more">More copies</string>
+    <string name="copies_hint">Each copy prints complete, all its sheets before the next copy starts.</string>
+    <string name="failed_fronts_hint">If the front sides came out fine anyway, you can carry on and print the back sides.</string>
+    <string name="failed_fronts_button">Print the back sides anyway</string>
+    <string name="cd_drag_to_reorder">Drag to reorder</string>
+    <string name="cd_enhance">Optimize for print</string>
+    <string name="cd_enhance_revert">Optimized for print. Tap to use the original</string>
+    <string name="pause_button">Pause</string>
+    <string name="resume_button">Resume</string>
+    <string name="printing_paused">Paused after sheet %1$d of %2$d</string>
+    <string name="dock_print">Print</string>
+    <string name="dock_scan">Scan</string>
+    <string name="scan_discard_title">Discard scanned pages?</string>
+    <string name="scan_discard_body">The scanned pages will be removed. Save or share them first if you need them.</string>
+    <string name="scan_discard_confirm">Discard</string>
     <string name="pages_reset">Select all</string>
     <string name="pages_tap_hint">Tap page numbers to pick them</string>
     <string name="quality_draft">Draft</string>
@@ -268,6 +291,14 @@
     <plurals name="pages_count">
         <item quantity="one">%1$d page</item>
         <item quantity="other">%1$d pages</item>
+    </plurals>
+    <plurals name="save_pictures">
+        <item quantity="one">%1$d picture will be saved</item>
+        <item quantity="other">%1$d pictures will be saved</item>
+    </plurals>
+    <plurals name="copies_count">
+        <item quantity="one">%1$d copy</item>
+        <item quantity="other">%1$d copies</item>
     </plurals>
     <plurals name="sheets_count">
         <item quantity="one">%1$d sheet</item>
