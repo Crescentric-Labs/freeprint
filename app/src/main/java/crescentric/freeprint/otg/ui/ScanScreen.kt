@@ -52,6 +52,16 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import crescentric.freeprint.otg.print.DocEnhance
+import crescentric.freeprint.otg.scan.ScanPage
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Palette
@@ -119,13 +129,12 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * The scanner, laid out like the print screen: a status card, a preview with a strip of page thumbnails, settings as rows
- * that open popups, and a bar at the bottom with the main action. Place a page on the glass, scan, repeat for more pages,
- * then print a copy (the pages open on the print screen), save a PDF or share it. [onPrint] receives the files to print.
+ * The scan tab, laid out like the print tab: a status card, a preview with a strip of page thumbnails, settings as tiles that
+ * open popups, and (in [StickyScanBar], owned by the home screen) the main action. Place a page on the glass, scan, repeat for
+ * more pages, then print a copy (the pages open in the print tab), save a PDF or share it. [onPrint] receives the files to print.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScanScreen(vm: ScanViewModel, onBack: () -> Unit, onPrint: (List<Uri>) -> Unit) {
+fun ScanContent(vm: ScanViewModel, onPrint: (List<Uri>) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var showViewer by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { vm.refresh() }
@@ -133,78 +142,54 @@ fun ScanScreen(vm: ScanViewModel, onBack: () -> Unit, onPrint: (List<Uri>) -> Un
     val savePdf = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/pdf")) { target ->
         if (target != null) vm.withPdf { pdf -> vm.copyTo(pdf, target) {} }
     }
+    // One picture goes to a file the user names; several go into a folder the user picks
+    val saveImage = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/jpeg")) { target ->
+        if (target != null) vm.saveImages(target, folder = false)
+    }
+    val saveFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { target ->
+        if (target != null) vm.saveImages(target, folder = true)
+    }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Image(
-                            painter = painterResource(id = R.drawable.app_icon),
-                            contentDescription = stringResource(R.string.cd_app_icon),
-                            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)),
-                        )
-                        Column {
-                            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                            Text(stringResource(R.string.scan_title), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        bottomBar = {
-            AnimatedVisibility(
-                visible = vm.status == ScannerStatus.READY,
-                enter = slideInVertically(tween(350, easing = FastOutSlowInEasing)) { it } + fadeIn(tween(250)),
-                exit = slideOutVertically(tween(300, easing = FastOutSlowInEasing)) { it } + fadeOut(tween(200)),
-            ) { StickyScanBar(vm) }
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            ScannerStatusCard(vm)
-            vm.message?.let { MessageCard(it, vm::dismissMessage) }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        ScannerStatusCard(vm)
+        vm.message?.let { MessageCard(it, vm::dismissMessage) }
 
-            if (vm.status == ScannerStatus.READY) {
-                if (vm.pages.isEmpty()) {
-                    ScanEmptyHero()
-                } else {
-                    ScanPreviewCard(vm, onOpenViewer = { showViewer = true; vm.setLargePreviewOpen(true) })
-                }
-                ScanSettingsCard(vm)
-                if (vm.pages.isNotEmpty()) {
-                    OutputCard(
-                        vm,
-                        onPrint = { vm.withPdf { pdf -> onPrint(listOf(Uri.fromFile(pdf))) } },
-                        onSave = { savePdf.launch("scan.pdf") },
-                        onShare = {
-                            vm.withPdf { pdf ->
-                                val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", pdf)
-                                val send = Intent(Intent.ACTION_SEND).apply {
-                                    type = "application/pdf"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(Intent.createChooser(send, null))
-                            }
-                        },
-                    )
-                }
-            }
-            Spacer(Modifier.height(24.dp))
+        // Like the print tab, the start screen is always there before the first page; its button waits for a ready scanner
+        if (vm.pages.isEmpty()) {
+            ScanEmptyHero(onScan = vm::scan, enabled = vm.status == ScannerStatus.READY && !vm.scanning)
         }
+        if (vm.status == ScannerStatus.READY) {
+            if (vm.pages.isNotEmpty()) {
+                ScanPreviewCard(vm, onOpenViewer = { showViewer = true; vm.setLargePreviewOpen(true) })
+            }
+            ScanSettingsCard(vm)
+            if (vm.pages.isNotEmpty()) {
+                OutputCard(
+                    vm,
+                    onPrint = { vm.withPdf(withLayout = false) { pdf -> onPrint(listOf(Uri.fromFile(pdf))) } },
+                    onSavePdf = { savePdf.launch("scan.pdf") },
+                    onSaveImages = { if (vm.outputCount == 1) saveImage.launch("scan.jpg") else saveFolder.launch(null) },
+                    onShare = {
+                        vm.withPdf { pdf ->
+                            val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", pdf)
+                            val send = Intent(Intent.ACTION_SEND).apply {
+                                type = "application/pdf"
+                                putExtra(Intent.EXTRA_STREAM, uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            }
+                            context.startActivity(Intent.createChooser(send, null))
+                        }
+                    },
+                )
+            }
+        }
+        Spacer(Modifier.height(24.dp))
     }
 
     if (showViewer) {
@@ -286,7 +271,16 @@ private fun ScannerStatusRow(vm: ScanViewModel, circle: Color) {
                 ScannerStatus.ERROR ->
                     Text(stringResource(R.string.scan_err_not_scanner), style = MaterialTheme.typography.bodyMedium)
                 ScannerStatus.READY -> if (caps != null) {
-                    Text(caps.model.ifBlank { stringResource(R.string.printer_fallback) }, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    // Like the printer card: the name with a pulsing Ready badge, a line of detail underneath
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            caps.model.ifBlank { stringResource(R.string.printer_fallback) },
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        ReadyBadge()
+                    }
                     Text(
                         stringResource(R.string.scanner_glass, "%.1f".format(caps.maxWidth / 300f), "%.1f".format(caps.maxHeight / 300f)),
                         style = MaterialTheme.typography.bodySmall,
@@ -296,17 +290,18 @@ private fun ScannerStatusRow(vm: ScanViewModel, circle: Color) {
             }
         }
         when (vm.status) {
-            ScannerStatus.NO_PRINTER -> Button(
-                onClick = vm::refresh,
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                shape = RoundedCornerShape(10.dp),
-            ) { Text(stringResource(R.string.cd_rescan), style = MaterialTheme.typography.labelMedium) }
+            ScannerStatus.NO_PRINTER -> IconButton(onClick = vm::refresh) {
+                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_rescan), tint = MaterialTheme.colorScheme.primary)
+            }
             ScannerStatus.NEEDS_PERMISSION -> Button(
                 onClick = vm::requestPermission,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             ) { Text(stringResource(R.string.grant_permission)) }
             ScannerStatus.ERROR -> Button(onClick = vm::loadCapabilities, shape = RoundedCornerShape(10.dp)) { Text(stringResource(R.string.scan_retry)) }
+            ScannerStatus.READY -> IconButton(onClick = vm::refresh) {
+                Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.cd_refresh), tint = MaterialTheme.colorScheme.primary)
+            }
             else -> {}
         }
     }
@@ -333,15 +328,11 @@ private fun MessageCard(m: ScanMessage, onDismiss: () -> Unit) {
 
 /** Shown before the first page, like the "Ready to print" card on the print screen. */
 @Composable
-private fun ScanEmptyHero() {
-    ElevatedCard(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
-    ) {
+private fun ScanEmptyHero(onScan: () -> Unit, enabled: Boolean) {
+    // Laid out like the print tab's start screen: no card, the picture, the words and the button on the page
+    run {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -358,6 +349,30 @@ private fun ScanEmptyHero() {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                listOf("PDF", "JPEG").forEach { format ->
+                    Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 1.dp) {
+                        Text(
+                            format,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            Button(
+                onClick = onScan,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(vertical = 12.dp),
+            ) {
+                Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.scan_start), fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -377,7 +392,7 @@ private fun PageStrip(vm: ScanViewModel, onDark: Boolean = false) {
         aspectFor = { i -> vm.pages.getOrNull(i)?.let { it.widthPx.toFloat() / it.heightPx } ?: 0.707f },
         labelFor = { i -> "${i + 1}" },
         descriptionFor = { i -> stringResource(R.string.cd_scan_page, i + 1) },
-        bitmapFor = { i -> vm.pages.getOrNull(i)?.let { rememberThumb(it.file) } },
+        bitmapFor = { i -> vm.pages.getOrNull(i)?.let { rememberThumb(it) } },
         onDark = onDark,
         scrollTick = vm.pageScrollTick,
         onDelete = { i -> vm.removePage(i) },
@@ -447,6 +462,20 @@ private fun ScanPreviewCard(vm: ScanViewModel, onOpenViewer: () -> Unit) {
                         }
                     }
                     if (image != null) {
+                        // Optimize for print, for this page; tap again to go back to the scanner's own picture
+                        Icon(
+                            Icons.Default.AutoFixHigh,
+                            contentDescription = stringResource(if (page.enhance) R.string.cd_enhance_revert else R.string.cd_enhance),
+                            tint = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(6.dp)
+                                .clip(CircleShape)
+                                .background(if (page.enhance) MaterialTheme.colorScheme.primary else Color.Black.copy(alpha = 0.45f))
+                                .clickable { vm.toggleEnhance(vm.pageIndex) }
+                                .padding(5.dp)
+                                .size(18.dp),
+                        )
                         Icon(
                             Icons.Default.Fullscreen,
                             contentDescription = stringResource(R.string.cd_fullscreen),
@@ -517,19 +546,35 @@ private fun ScanViewer(vm: ScanViewModel, onDismiss: () -> Unit) {
         onSelect = vm::selectPage,
         onDismiss = onDismiss,
         strip = { dark -> PageStrip(vm, onDark = dark) },
+        actions = { tint ->
+            val page = vm.pages.getOrNull(vm.pageIndex)
+            if (page != null) {
+                IconButton(onClick = { vm.toggleEnhance(vm.pageIndex) }) {
+                    Icon(
+                        Icons.Default.AutoFixHigh,
+                        contentDescription = stringResource(if (page.enhance) R.string.cd_enhance_revert else R.string.cd_enhance),
+                        tint = if (page.enhance) MaterialTheme.colorScheme.primary else tint
+                    )
+                }
+            }
+        },
     )
 }
 
 /** A small decoded copy of a scanned page for the strip (a full 300 dpi A4 page would be 35 MB). */
 @Composable
-private fun rememberThumb(file: File): ImageBitmap? {
-    val state = produceState<ImageBitmap?>(null, file) {
+private fun rememberThumb(page: ScanPage): ImageBitmap? {
+    val file = page.file
+    // Keyed on whether the page is optimized, so switching it redraws just this page's thumbnail
+    val state = produceState<ImageBitmap?>(null, file, page.enhance) {
         value = withContext(Dispatchers.IO) {
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(file.path, bounds)
             var sample = 1
             while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 400) sample *= 2
-            BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample })?.asImageBitmap()
+            BitmapFactory.decodeFile(file.path, BitmapFactory.Options().apply { inSampleSize = sample; inMutable = page.enhance })
+                ?.also { if (page.enhance) DocEnhance.apply(it) }
+                ?.asImageBitmap()
         }
     }
     return state.value
@@ -614,7 +659,7 @@ private fun ScanSettingsCard(vm: ScanViewModel) {
 
 /** The bar at the bottom: what has been scanned so far, progress while scanning, and the Scan button. */
 @Composable
-private fun StickyScanBar(vm: ScanViewModel) {
+internal fun StickyScanBar(vm: ScanViewModel) {
     val s = vm.settings
     Surface(tonalElevation = 6.dp, shadowElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
         Column(
@@ -673,7 +718,8 @@ private fun StickyScanBar(vm: ScanViewModel) {
 }
 
 @Composable
-private fun OutputCard(vm: ScanViewModel, onPrint: () -> Unit, onSave: () -> Unit, onShare: () -> Unit) {
+private fun OutputCard(vm: ScanViewModel, onPrint: () -> Unit, onSavePdf: () -> Unit, onSaveImages: () -> Unit, onShare: () -> Unit) {
+    var showSave by remember { mutableStateOf(false) }
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -687,8 +733,10 @@ private fun OutputCard(vm: ScanViewModel, onPrint: () -> Unit, onSave: () -> Uni
                 Text(stringResource(R.string.scan_print))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = onSave, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) {
-                    Text(stringResource(R.string.scan_save_pdf))
+                OutlinedButton(onClick = { showSave = true }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) {
+                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.scan_save))
                 }
                 OutlinedButton(onClick = onShare, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp)) {
                     Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -699,5 +747,73 @@ private fun OutputCard(vm: ScanViewModel, onPrint: () -> Unit, onSave: () -> Uni
             if (vm.saved) Text(stringResource(R.string.scan_saved), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = vm::clearPages, modifier = Modifier.align(Alignment.End)) { Text(stringResource(R.string.scan_clear)) }
         }
+    }
+    if (showSave) SaveDialog(vm, onSavePdf = { showSave = false; onSavePdf() }, onSaveImages = { showSave = false; onSaveImages() }) { showSave = false }
+}
+
+/**
+ * Choose how a scan is saved: as a PDF or as pictures, either each page as scanned or laid out on paper sheets with the same
+ * settings the print screen has (pages per sheet, size and scale, margins, position, orientation, colour).
+ */
+@Composable
+private fun SaveDialog(vm: ScanViewModel, onSavePdf: () -> Unit, onSaveImages: () -> Unit, onDismiss: () -> Unit) {
+    var open by remember { mutableStateOf<LayoutSetting?>(null) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.save_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.save_layout), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.save_layout_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(checked = vm.saveLayout, onCheckedChange = vm::useSaveLayout)
+                }
+                if (vm.saveLayout) {
+                    LayoutSetting.entries.chunked(2).forEach { pair ->
+                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            pair.forEach { s ->
+                                SettingTile(
+                                    s.icon, stringResource(s.titleRes), layoutSubtitle(vm.saveOptions, s),
+                                    onClick = { open = s },
+                                    modifier = Modifier.weight(1f).fillMaxHeight()
+                                )
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                }
+                Text(
+                    pluralStringResource(R.plurals.save_pictures, vm.outputCount, vm.outputCount),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+                Button(onClick = onSavePdf, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                    Icon(Icons.Default.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.save_as_pdf))
+                }
+                OutlinedButton(onClick = onSaveImages, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                    Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.save_as_images))
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.dialog_cancel)) } },
+    )
+    open?.let { s ->
+        AlertDialog(
+            onDismissRequest = { open = null },
+            title = { Text(stringResource(s.titleRes)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LayoutSettingBody(s, vm.saveOptions, vm::updateSaveOptions) { open = null }
+                }
+            },
+            confirmButton = { TextButton(onClick = { open = null }) { Text(stringResource(R.string.dialog_done)) } },
+        )
     }
 }
