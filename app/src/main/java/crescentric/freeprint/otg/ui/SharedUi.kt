@@ -24,6 +24,11 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -364,6 +369,7 @@ internal fun ZoomableViewer(
     onSelect: (Int) -> Unit,
     onDismiss: () -> Unit,
     strip: @Composable (onDark: Boolean) -> Unit,
+    actions: @Composable RowScope.(tint: Color) -> Unit = {},
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -480,6 +486,7 @@ internal fun ZoomableViewer(
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.weight(1f),
                     )
+                    actions(content)
                     IconButton(onClick = { onSelect(current - 1) }, enabled = current > 0) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_prev_sheet), tint = if (current > 0) content else disabled)
                     }
@@ -524,5 +531,34 @@ internal fun RestoreButton(count: Int, onClick: () -> Unit) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary
         )
+    }
+}
+
+/** The small "Ready" badge with a softly pulsing dot, shared by the printer card and the scanner card. */
+@Composable
+internal fun ReadyBadge() {
+    val infinite = rememberInfiniteTransition(label = "ready_pulse")
+    val pulseScale by infinite.animateFloat(
+        initialValue = 0.85f, targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse_scale"
+    )
+    val pulseAlpha by infinite.animateFloat(
+        initialValue = 0.35f, targetValue = 0.95f,
+        animationSpec = infiniteRepeatable(tween(1200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "pulse_alpha"
+    )
+    Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                Modifier.size(6.dp)
+                    .graphicsLayer { scaleX = pulseScale; scaleY = pulseScale; alpha = pulseAlpha }
+                    .clip(CircleShape)
+                    .background(Color.White)
+            )
+            Text(stringResource(R.string.ready), style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
+        }
     }
 }
