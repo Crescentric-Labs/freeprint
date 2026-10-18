@@ -126,9 +126,9 @@ fun HomeScreen(vm: PrintViewModel, scanVm: ScanViewModel, onOpenAbout: () -> Uni
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Image(
-                            painter = painterResource(id = R.drawable.app_icon),
+                            painter = painterResource(id = R.drawable.app_mark),
                             contentDescription = stringResource(R.string.cd_app_icon),
-                            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)),
+                            modifier = Modifier.size(38.dp),
                         )
                         Column {
                             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
