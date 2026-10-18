@@ -5,6 +5,7 @@
 #include <libusb.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -101,18 +102,23 @@ inline bool writeAll(libusb_device_handle *h, uint8_t ep, const uint8_t *d, size
 }
 
 // Reads until the chunked-transfer terminator "0\r\n\r\n". The printer keeps the connection
-// open after replying, so waiting for a timeout would be wrong.
-inline Bytes readResponse(libusb_device_handle *h, uint8_t ep, std::string &err, unsigned timeoutMs = 15000) {
+// open after replying, so waiting for a timeout would be wrong. A printer that is still working on a long job
+// may take a while to answer, so quiet periods are tolerated until `waitMs` has passed in total.
+inline Bytes readResponse(libusb_device_handle *h, uint8_t ep, std::string &err, unsigned waitMs = 15000) {
     Bytes resp(32768);
     size_t total = 0;
-    for (int i = 0; i < 64 && total < resp.size(); i++) {
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(waitMs);
+    while (total < resp.size()) {
         int got = 0;
-        int r = libusb_bulk_transfer(h, ep, resp.data() + total, (int)(resp.size() - total), &got, timeoutMs);
-        if (r != 0) {
+        int r = libusb_bulk_transfer(h, ep, resp.data() + total, (int)(resp.size() - total), &got, 1000);
+        total += got;
+        if (r == LIBUSB_ERROR_TIMEOUT) {
+            if (std::chrono::steady_clock::now() < deadline) continue;   // still printing; keep waiting
+        }
+        if (r != 0 && !(r == LIBUSB_ERROR_TIMEOUT && got > 0)) {
             err += std::string("read: ") + libusb_error_name(r) + "\n";
             break;
         }
-        total += got;
         if (total >= 5 && memcmp(resp.data() + total - 5, "0\r\n\r\n", 5) == 0) break;
     }
     resp.resize(total);
