@@ -1,0 +1,2 @@
+• A shared text file opens as a PDF named after the file
+• The About screen's source link points to the new home on GitHub
