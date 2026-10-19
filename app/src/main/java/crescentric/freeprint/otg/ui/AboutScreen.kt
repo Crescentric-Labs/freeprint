@@ -75,7 +75,7 @@ import kotlinx.coroutines.withContext
  * Where the project's source code lives. Leave it empty until the repository is public: the "Source code" row is hidden while this
  * is blank. When builds are distributed, the GPL expects users to be able to find the source, so set it before publishing.
  */
-internal const val SOURCE_URL = "https://github.com/ChethiyaNuwan/freeprint"
+internal const val SOURCE_URL = "https://github.com/Crescentric-Labs/freeprint"
 
 /** The version of libusb vendored under app/src/main/cpp/third_party/libusb. */
 private const val LIBUSB_VERSION = "1.0.30"
