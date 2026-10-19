@@ -1818,9 +1818,6 @@ internal fun DiagnosticsBottomSheet(
                 OutlinedButton(onClick = vm::scannerProbe, shape = RoundedCornerShape(8.dp)) {
                     Text(stringResource(R.string.diag_scan_probe))
                 }
-                OutlinedButton(onClick = vm::openSample, shape = RoundedCornerShape(8.dp)) {
-                    Text(stringResource(R.string.diag_sample))
-                }
                 OutlinedButton(onClick = vm::clearDiagnostics, shape = RoundedCornerShape(8.dp)) {
                     Text(stringResource(R.string.diag_clear))
                 }
