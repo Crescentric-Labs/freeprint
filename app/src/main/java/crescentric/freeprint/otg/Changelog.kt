@@ -1,5 +1,8 @@
 package crescentric.freeprint.otg
 
+/** A run of text from a changelog line with the inline Markdown it carried: `**bold**` or `` `code` ``. */
+class InlineSpan(val text: String, val bold: Boolean = false, val code: Boolean = false)
+
 /** One group of entries inside a release: "Added", "Changed", "Fixed"... */
 class ChangelogSection(val title: String, val items: List<String>)
 
@@ -12,6 +15,32 @@ class ChangelogRelease(val version: String, val date: String, val note: String, 
  * lines under a release heading become its note, and anything else (the introduction, link definitions) is skipped.
  */
 object Changelog {
+    /**
+     * Splits one changelog line into plain, **bold** and `code` runs, dropping the Markdown markers, so the app can show the same
+     * text GitHub shows without stray asterisks and backticks. A marker with no closing partner is kept as written.
+     */
+    fun spans(line: String): List<InlineSpan> {
+        val out = ArrayList<InlineSpan>()
+        val plain = StringBuilder()
+        fun flush() { if (plain.isNotEmpty()) { out += InlineSpan(plain.toString()); plain.clear() } }
+        var i = 0
+        while (i < line.length) {
+            when {
+                line.startsWith("**", i) && line.indexOf("**", i + 2) > i + 2 -> {
+                    val end = line.indexOf("**", i + 2)
+                    flush(); out += InlineSpan(line.substring(i + 2, end), bold = true); i = end + 2
+                }
+                line[i] == '`' && line.indexOf('`', i + 1) > i + 1 -> {
+                    val end = line.indexOf('`', i + 1)
+                    flush(); out += InlineSpan(line.substring(i + 1, end), code = true); i = end + 1
+                }
+                else -> { plain.append(line[i]); i++ }
+            }
+        }
+        flush()
+        return out
+    }
+
     private val releaseLine = Regex("""^##\s+\[?([^\]\s]+)]?(?:\s*-\s*(\S+))?\s*$""")
 
     fun parse(text: String): List<ChangelogRelease> {
