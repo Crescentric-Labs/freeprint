@@ -9,6 +9,11 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-10-20
+
+### Fixed
+- Release builds are now truly reproducible. 2.0.3 still recorded the git state of the build inside the APK, which differs between a clone and a source archive, so a rebuild was not byte-identical. It no longer does.
+
 ## [2.0.3] - 2026-10-20
 
 ### Changed
