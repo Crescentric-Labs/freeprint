@@ -75,7 +75,7 @@ per-model driver to write.
   <tr>
     <td align="center"><img src="docs/screenshots/13-light-scan.png" width="210" alt="Light theme scan tab"><br><sub><b>Light theme: Scan</b><br>the same cable, in light</sub></td>
     <td align="center"><img src="docs/screenshots/14-sinhala-home.png" width="210" alt="The app in Sinhala"><br><sub><b>Sinhala (සිංහල)</b><br>switch language inside the app</sub></td>
-    <td align="center"><img src="docs/screenshots/18-shared-text.png" width="210" alt="Shared text opened as a printable PDF"><br><sub><b>Share to Free Print</b><br>a note shared from another app, printed as a PDF</sub></td>
+    <td align="center"><img src="docs/screenshots/18-share-sheet.png" width="210" alt="Android's share sheet listing Free Print"><br><sub><b>Share to Free Print</b><br>a text file shared from the Files app; Free Print is in the list and opens it as a PDF</sub></td>
   </tr>
 </table>
 
