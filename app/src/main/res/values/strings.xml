@@ -212,7 +212,6 @@
     <string name="scan_err_cannot_open">Could not open the scanner. Is the printer in use?</string>
     <string name="scan_err_save">Could not save the file.</string>
     <string name="diag_test">Print test page</string>
-    <string name="diag_sample">Load sample PDF</string>
     <string name="diag_clear">Clear</string>
     <string name="diag_prompt">Select an action above to query your connected USB printer.</string>
     <string name="viewer_hint">Pinch or double-tap to zoom. Swipe to change sheet.</string>
