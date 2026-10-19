@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install the NDK and CMake
+        run: |
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          set -o pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
+
+      - name: The two string files are in step with the generator
+        run: |
+          python3 -I tools/gen_strings.py
+          git diff --exit-code -- app/src/main/res/values/strings.xml app/src/main/res/values-si/strings.xml
+
+      - name: Unit tests, debug and release builds
+        run: ./gradlew testDebugUnitTest assembleDebug assembleRelease --console=plain
+
+      - name: The changelog has an entry for the version being built
+        run: |
+          version="$(sed -n 's/.*versionName = "\(.*\)"/\1/p' app/build.gradle.kts)"
+          .github/scripts/release-notes.sh "$version" > /dev/null
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: free-print-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: app/build/reports/
