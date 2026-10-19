@@ -1,0 +1,5 @@
+• Share and "open with": PDFs, pictures and text from any app open straight on the Print tab
+• Shared text and text files print as a PDF
+• New launcher icon without a background card
+• Fixed a crash at start-up when opened from a share
+• Fixed the splash screen cutting off the printer
