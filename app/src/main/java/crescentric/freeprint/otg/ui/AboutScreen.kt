@@ -5,6 +5,17 @@ import android.content.Intent
 import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.rotate
+import crescentric.freeprint.otg.Changelog
+import crescentric.freeprint.otg.ChangelogRelease
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -60,7 +71,7 @@ import kotlinx.coroutines.withContext
  * Where the project's source code lives. Leave it empty until the repository is public: the "Source code" row is hidden while this
  * is blank. When builds are distributed, the GPL expects users to be able to find the source, so set it before publishing.
  */
-internal const val SOURCE_URL = ""
+internal const val SOURCE_URL = "https://github.com/ChethiyaNuwan/freeprint"
 
 /** The version of libusb vendored under app/src/main/cpp/third_party/libusb. */
 private const val LIBUSB_VERSION = "1.0.30"
@@ -127,6 +138,9 @@ fun AboutScreen(vm: PrintViewModel, onBack: () -> Unit) {
                 }
             }
 
+            // What changed in each release, from CHANGELOG.md; tap to open it
+            ChangelogCard()
+
             // Hardware diagnostics, USB details and test prints
             OutlinedButton(
                 onClick = { showDiagnostics = true },
@@ -175,6 +189,75 @@ fun AboutScreen(vm: PrintViewModel, onBack: () -> Unit) {
 
     if (showDiagnostics) DiagnosticsBottomSheet(vm = vm, onDismiss = { showDiagnostics = false })
     showing?.let { doc -> LicenseDialog(doc) { showing = null } }
+}
+
+/**
+ * The project's changelog. Folded it shows the newest release; tapping the header unfolds every release, each with its groups
+ * (Added, Changed, Fixed) and entries. The text comes from CHANGELOG.md, which the build copies into the app's assets.
+ */
+@Composable
+private fun ChangelogCard() {
+    val context = LocalContext.current
+    val releases by produceState<List<ChangelogRelease>?>(null) {
+        value = withContext(Dispatchers.IO) {
+            runCatching { Changelog.parse(context.assets.open("CHANGELOG.md").bufferedReader().use { it.readText() }) }.getOrDefault(emptyList())
+        }
+    }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val all = releases.orEmpty()
+    if (all.isEmpty()) return
+    val arrow by animateFloatAsState(if (expanded) 180f else 0f, label = "changelog_arrow")
+
+    Card {
+        Column(Modifier.fillMaxWidth().animateContentSize()) {
+            Row(
+                Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Icon(Icons.Default.NewReleases, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.about_changelog_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        stringResource(R.string.about_changelog_latest, all.first().version, all.first().date).trimEnd(' ', '·', ' '),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Icon(
+                    Icons.Default.ExpandMore,
+                    contentDescription = stringResource(if (expanded) R.string.cd_collapse else R.string.cd_expand),
+                    modifier = Modifier.rotate(arrow),
+                )
+            }
+            if (expanded) {
+                Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    HorizontalDivider()
+                    all.forEach { release -> ReleaseBlock(release) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReleaseBlock(release: ChangelogRelease) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(release.version, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            if (release.date.isNotEmpty()) Text(release.date, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (release.note.isNotEmpty()) Text(release.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        release.sections.forEach { section ->
+            Text(section.title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+            section.items.forEach { item ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("•", style = MaterialTheme.typography.bodySmall)
+                    Text(item, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
 }
 
 @Composable
