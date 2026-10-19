@@ -205,7 +205,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Languages | English, Sinhala (274 strings and 8 plurals in each) |
 | Source | 38 Kotlin files (about 7.4k lines), 15 test classes (about 0.8k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
 | Tests | **126 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
-| History | 380+ commits, one file per commit; 5 releases, 6 tags |
+| History | 380+ commits, one file per commit; 6 releases, 6 tags |
 | Build | Gradle 8.10.2, AGP 8.7.3, Kotlin 2.0.21, JDK 17, NDK 27.2, CMake 3.22.1 |
 
 ## Releases and deployment
