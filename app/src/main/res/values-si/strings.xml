@@ -212,7 +212,6 @@
     <string name="scan_err_cannot_open">ස්කෑනරය විවෘත කළ නොහැකි විය. මුද්‍රණ යන්ත්‍රය භාවිතයේ තිබේද?</string>
     <string name="scan_err_save">ගොනුව සුරැකිය නොහැකි විය.</string>
     <string name="diag_test">පරීක්ෂණ පිටුව මුද්‍රණය</string>
-    <string name="diag_sample">නියැදි PDF පූරණය</string>
     <string name="diag_clear">මකන්න</string>
     <string name="diag_prompt">සම්බන්ධ කර ඇති USB මුද්‍රණ යන්ත්‍රය විමසීමට ඉහත ක්‍රියාවක් තෝරන්න.</string>
     <string name="viewer_hint">විශාල කිරීමට පින්ච් කරන්න හෝ දෙවරක් තට්ටු කරන්න. පත්‍රය මාරු කිරීමට ස්වයිප් කරන්න.</string>
