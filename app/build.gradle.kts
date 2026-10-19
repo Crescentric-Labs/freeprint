@@ -38,17 +38,43 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+
+    // No Google-signed dependency blob inside the APK: F-Droid rejects it and it would stop the build being reproducible.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
-// The About screen shows the real licence files. They are copied into the app's assets at build time, so there is no second
-// copy to keep in step with the LICENSE at the repository root or with the one shipped with libusb.
-val copyLicenses by tasks.registering(Copy::class) {
-    from(rootProject.file("LICENSE")) { rename { "GPL-3.0.txt" } }
-    from(file("src/main/cpp/third_party/libusb/COPYING")) { rename { "libusb-LGPL-2.1.txt" } }
-    into(layout.buildDirectory.dir("generated/licenseAssets/licenses"))
+// The About screen shows the real licence files and the changelog. They are copied into the app's assets at build time, so there
+// is no second copy to keep in step with the LICENSE and CHANGELOG.md at the repository root or the one shipped with libusb.
+// The folder is registered as a generated asset source of every variant, so merging, linting and packaging all wait for it.
+abstract class AppAssetsTask : DefaultTask() {
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val license: RegularFileProperty
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val libusbLicense: RegularFileProperty
+    @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val changelog: RegularFileProperty
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val out = outputDir.get().asFile.apply { deleteRecursively(); mkdirs() }
+        val licenses = File(out, "licenses").apply { mkdirs() }
+        license.get().asFile.copyTo(File(licenses, "GPL-3.0.txt"), overwrite = true)
+        libusbLicense.get().asFile.copyTo(File(licenses, "libusb-LGPL-2.1.txt"), overwrite = true)
+        changelog.get().asFile.copyTo(File(out, "CHANGELOG.md"), overwrite = true)
+    }
 }
-android.sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/licenseAssets"))
-tasks.configureEach { if (name.startsWith("merge") && name.endsWith("Assets")) dependsOn(copyLicenses) }
+
+val appAssets = tasks.register<AppAssetsTask>("appAssets") {
+    license.set(rootProject.layout.projectDirectory.file("LICENSE"))
+    libusbLicense.set(layout.projectDirectory.file("src/main/cpp/third_party/libusb/COPYING"))
+    changelog.set(rootProject.layout.projectDirectory.file("CHANGELOG.md"))
+    outputDir.set(layout.buildDirectory.dir("generated/appAssets"))
+}
+
+androidComponents {
+    onVariants { variant -> variant.sources.assets?.addGeneratedSourceDirectory(appAssets, AppAssetsTask::outputDir) }
+}
 
 dependencies {
     implementation(libs.androidx.core.ktx)
