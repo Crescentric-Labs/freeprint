@@ -423,6 +423,8 @@ Start with [CONTRIBUTING.md](CONTRIBUTING.md). The short version: **printer repo
 translations, and small focused pull requests. Please keep `./gradlew testDebugUnitTest` green, put new text through
 `tools/gen_strings.py`, and keep the app free of permissions.
 
+Everyone taking part is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).
+
 ## Acknowledgements and licence
 
 Free Print is free software under the **GNU General Public License v3.0**; see [LICENSE](LICENSE). The About screen shows the
