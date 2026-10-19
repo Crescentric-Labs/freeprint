@@ -13,8 +13,8 @@ android {
         applicationId = "crescentric.freeprint.otg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "2.0.3"
+        versionCode = 7
+        versionName = "2.0.4"
 
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -22,6 +22,9 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            // Do not record the git state the APK was built from: it differs between a clone, a worktree and a source archive,
+            // which made two builds of the same source different files. Reproducible builds need the same bytes everywhere.
+            vcsInfo.include = false
         }
     }
 
