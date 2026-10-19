@@ -82,7 +82,7 @@ jobs:
           "$bt/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
           "$bt/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
-            --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --out "FreePrint-$VERSION.apk" "$RUNNER_TEMP/aligned.apk"
+            --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --alignment-preserved --out "FreePrint-$VERSION.apk" "$RUNNER_TEMP/aligned.apk"
           "$bt/apksigner" verify --print-certs "FreePrint-$VERSION.apk"
           sha256sum "FreePrint-$VERSION.apk" > "FreePrint-$VERSION.apk.sha256"
           rm -f "$RUNNER_TEMP/release.jks"
