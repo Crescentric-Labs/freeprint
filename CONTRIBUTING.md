@@ -68,3 +68,5 @@ Please do not open a public issue for a security problem. See [SECURITY.md](SECU
 
 Free Print is under the GNU General Public License v3.0. By sending a contribution you agree it can be distributed under that
 licence.
+
+Be kind: everyone taking part is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).
