@@ -31,7 +31,7 @@ uploaded: the work is making sure the source builds cleanly and describing the a
    The unsigned APK is at `app/build/outputs/apk/release/app-release-unsigned.apk`.
 3. **Check the screenshots** in `fastlane/metadata/android/en-US/images/phoneScreenshots/` still match the app.
 4. **Check the licence story**: the About screen shows the GPL notice and the libusb credit and lets people read both texts.
-5. **Tag the release** and push the tag (`git tag v2.0.1 && git push origin v2.0.1`).
+5. **Tag the release** and push the tag (`git tag v2.0.2 && git push origin v2.0.2`).
 6. **Open a merge request** against [fdroiddata](https://gitlab.com/fdroid/fdroiddata) adding
    `metadata/crescentric.freeprint.otg.yml` (draft below). Follow the
    [inclusion how-to](https://f-droid.org/docs/Inclusion_How-To/); the reviewers will run their scanner and a test build and
@@ -55,9 +55,9 @@ RepoType: git
 Repo: https://github.com/Crescentric-Labs/freeprint.git
 
 Builds:
-  - versionName: 2.0.1
-    versionCode: 4
-    commit: v2.0.1
+  - versionName: 2.0.2
+    versionCode: 5
+    commit: v2.0.2
     subdir: app
     sudo:
       - apt-get update || apt-get update
@@ -70,8 +70,8 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 2.0.1
-CurrentVersionCode: 4
+CurrentVersion: 2.0.2
+CurrentVersionCode: 5
 ```
 
 Notes on the draft:
