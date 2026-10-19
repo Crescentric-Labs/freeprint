@@ -56,6 +56,12 @@ KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" KEY_PASSWORD="$KEY_PASSWORD" "$bt/apksign
 # Only the v2 and v3 signature blocks, no META-INF signature files, and the zip layout left as the build made it (--alignment-preserved,
 # otherwise apksigner pads entries): a rebuild, such as F-Droid's, must match the unsigned build exactly
 if unzip -l "$apk" | grep -q 'META-INF/.*\.\(SF\|RSA\)'; then echo "the APK carries v1 signature files"; exit 1; fi
+# GitHub releases cannot be changed once published, so prove the signature can be matched to the unsigned build before publishing
+# (this is the check F-Droid makes). Needs `pip install apksigcopier` and apksigner on PATH.
+command -v apksigcopier >/dev/null || { echo "install apksigcopier first: pip install apksigcopier"; exit 1; }
+PATH="$bt:$PATH" apksigcopier compare "$apk" --unsigned "$unsigned" >/dev/null 2>&1 \
+  || { echo "the signed APK does not match the unsigned build; not publishing"; exit 1; }
+echo "==> signature matches the unsigned build (reproducible-build check passed)"
 "$bt/apksigner" verify --print-certs "$apk" | sed -n '1,3p'
 ( cd "$out" && shasum -a 256 "FreePrint-$version.apk" > "FreePrint-$version.apk.sha256" )
 sha="$(cut -d' ' -f1 "$out/FreePrint-$version.apk.sha256")"
