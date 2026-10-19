@@ -54,6 +54,18 @@ class ChangelogTest {
         assertTrue(Changelog.parse(sample).none { it.sections.any { s -> s.items.any { i -> i.contains("example.invalid") } } })
     }
 
+    @Test fun splitsBoldAndCodeRunsAndDropsTheMarkers() {
+        val s = Changelog.spans("A floating dock between **Print** and **Scan**, ids like `a.b.c` stay.")
+        assertEquals(listOf("A floating dock between ", "Print", " and ", "Scan", ", ids like ", "a.b.c", " stay."), s.map { it.text })
+        assertEquals(listOf(false, true, false, true, false, false, false), s.map { it.bold })
+        assertEquals(listOf(false, false, false, false, false, true, false), s.map { it.code })
+    }
+
+    @Test fun anUnclosedMarkerIsKeptAsWritten() {
+        assertEquals("2 ** 3 and a ` tick", Changelog.spans("2 ** 3 and a ` tick").joinToString("") { it.text })
+        assertEquals(1, Changelog.spans("no markers at all").size)
+    }
+
     @Test fun readsTheRealChangelogHeadings() {
         val text = java.io.File("../CHANGELOG.md").takeIf { it.exists() }?.readText() ?: return
         val r = Changelog.parse(text)
