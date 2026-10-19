@@ -41,6 +41,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -58,6 +59,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -240,20 +244,41 @@ private fun ChangelogCard() {
     }
 }
 
+/** A changelog line with its **bold** and `code` markers turned into styling. */
+@Composable
+private fun inlineMarkdown(text: String) = buildAnnotatedString {
+    val codeBackground = MaterialTheme.colorScheme.surfaceVariant
+    Changelog.spans(text).forEach { span ->
+        when {
+            span.bold -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(span.text) }
+            span.code -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace, background = codeBackground)) { append(span.text) }
+            else -> append(span.text)
+        }
+    }
+}
+
 @Composable
 private fun ReleaseBlock(release: ChangelogRelease) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(release.version, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        // The version on the left, its date on the right
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                Text(
+                    release.version,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
             if (release.date.isNotEmpty()) Text(release.date, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (release.note.isNotEmpty()) Text(release.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (release.note.isNotEmpty()) Text(inlineMarkdown(release.note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         release.sections.forEach { section ->
             Text(section.title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             section.items.forEach { item ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("•", style = MaterialTheme.typography.bodySmall)
-                    Text(item, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                    Text(inlineMarkdown(item), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                 }
             }
         }
