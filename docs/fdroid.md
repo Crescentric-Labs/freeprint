@@ -33,56 +33,71 @@ uploaded: the work is making sure the source builds cleanly and describing the a
 4. **Check the licence story**: the About screen shows the GPL notice and the libusb credit and lets people read both texts.
 5. **Tag the release** and push the tag (`git tag v2.0.2 && git push origin v2.0.2`).
 6. **Open a merge request** against [fdroiddata](https://gitlab.com/fdroid/fdroiddata) adding
-   `metadata/crescentric.freeprint.otg.yml` (draft below). Follow the
+   `metadata/crescentric.freeprint.otg.yml` (see below). Follow the
    [inclusion how-to](https://f-droid.org/docs/Inclusion_How-To/); the reviewers will run their scanner and a test build and
    may ask for small changes.
 
-## Draft `metadata/crescentric.freeprint.otg.yml`
+## The metadata file
 
-```yaml
-Categories:
-  - System
-License: GPL-3.0-only
-AuthorName: Crescentric
-WebSite: https://github.com/Crescentric-Labs/freeprint
-SourceCode: https://github.com/Crescentric-Labs/freeprint
-IssueTracker: https://github.com/Crescentric-Labs/freeprint/issues
-Changelog: https://github.com/Crescentric-Labs/freeprint/blob/HEAD/CHANGELOG.md
+The file F-Droid needs is kept here: [`docs/fdroid/crescentric.freeprint.otg.yml`](fdroid/crescentric.freeprint.otg.yml). It has
+been checked with F-Droid's own tools (`fdroid lint` is clean and `fdroid rewritemeta` leaves it unchanged), and
+`fdroid build` built tag `v2.0.2` from it into an APK on the author's Mac.
 
-AutoName: Free Print
+Notes on it:
 
-RepoType: git
-Repo: https://github.com/Crescentric-Labs/freeprint.git
+- `ndk: r27c` is the NDK this project is built with (`27.2.12479018`); about 560 apps in F-Droid's repository use it.
+- The licence is `GPL-3.0-only` because the project's `LICENSE` and About screen say "version 3" without "or later". If you want
+  "or later", say so in the notices (and in the About text) first and change this line.
+- `UpdateCheckMode: Tags` plus `AutoUpdateMode: Version` makes F-Droid pick up each new `vX.Y.Z` tag by itself, as long as
+  `versionName`/`versionCode` in that tag match. After a release only the changelog and the tag are needed.
+- The `sudo` lines install JDK 17 on the build server, as many Gradle apps do.
+- Add `AntiFeatures` only if one ever applies. None does today.
 
-Builds:
-  - versionName: 2.0.2
-    versionCode: 5
-    commit: v2.0.2
-    subdir: app
-    sudo:
-      - apt-get update || apt-get update
-      - apt-get install -y openjdk-17-jdk-headless
-      - update-java-alternatives -a
-    gradle:
-      - yes
-    ndk: r27c
-    # CMake 3.22.1 is installed by the Android Gradle plugin from the SDK; no extra step.
+## Submitting it (a merge request on GitLab)
 
-AutoUpdateMode: Version
-UpdateCheckMode: Tags
-CurrentVersion: 2.0.2
-CurrentVersionCode: 5
+This needs your own account on [gitlab.com](https://gitlab.com); nobody else can do it for you.
+
+1. **Fork** [gitlab.com/fdroid/fdroiddata](https://gitlab.com/fdroid/fdroiddata) with the Fork button.
+2. **Clone your fork** and make a branch named after the app:
+   ```sh
+   git clone --depth 1 https://gitlab.com/<your-user>/fdroiddata.git && cd fdroiddata
+   git checkout -b crescentric.freeprint.otg
+   ```
+3. **Add the file** and check it with F-Droid's tool (`pip install fdroidserver` or `pipx install fdroidserver`):
+   ```sh
+   cp /path/to/freeprint/docs/fdroid/crescentric.freeprint.otg.yml metadata/
+   fdroid lint crescentric.freeprint.otg
+   fdroid rewritemeta crescentric.freeprint.otg     # should change nothing
+   ```
+4. **Commit and push**:
+   ```sh
+   git add metadata/crescentric.freeprint.otg.yml
+   git commit -m "New app: Free Print"
+   git push -u origin crescentric.freeprint.otg
+   ```
+5. **Open the merge request** from your fork's page (GitLab offers a button after the push). Title it `New app: Free Print` and use
+   the checklist in the description (below). Tick the boxes that are true, and leave the rest.
+6. **Answer the reviewers.** They run a scanner and a test build and may ask for small changes (a different Java setup, a category,
+   a licence detail). Push fixes to the same branch. Reviews usually take days to a few weeks.
+
+Suggested merge request description:
+
+```
+Adds Free Print (crescentric.freeprint.otg).
+
+Free Print prints PDFs, pictures and text to a USB printer over OTG, and scans from its glass, with no drivers and no network.
+It is also an Android print service. The app declares no permissions at all.
+
+- Source: https://github.com/Crescentric-Labs/freeprint (GPL-3.0-only, libusb 1.0.30 LGPL-2.1+ vendored as source)
+- No ads, no tracking, no network access, no non-free dependencies or assets
+- Built from source with Gradle; native code with CMake and NDK r27c (arm64-v8a only)
+- dependenciesInfo is disabled in the APK
+- Store texts, changelogs, icon and screenshots are in the app repository under fastlane/metadata
+- fdroid lint is clean; fdroid build succeeds locally for v2.0.2
 ```
 
-Notes on the draft:
-
-- `ndk: r27c` is the NDK this project is built with (`27.2.12479018`). If the build server does not offer that exact one, ask
-  in the merge request or change `ndkVersion` in `app/build.gradle.kts` to one it has.
-- The licence is declared as `GPL-3.0-only` because the project's `LICENSE` and About screen say "version 3" without "or later".
-  If you want "or later", say so in the notices (and in the About text) first and change this line.
-- `UpdateCheckMode: Tags` plus `AutoUpdateMode: Version` makes F-Droid pick up each new `vX.Y.Z` tag by itself, as long as
-  `versionName`/`versionCode` in that tag match.
-- Add `AntiFeatures` only if one ever applies. None does today.
+After it is merged F-Droid builds, signs and publishes the app (the first listing can take a few days), and later versions need
+only a new tag.
 
 ## Releasing a new version
 
