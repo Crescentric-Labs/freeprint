@@ -1,0 +1,32 @@
+Categories:
+  - Connectivity
+  - System
+License: GPL-3.0-only
+AuthorName: Crescentric
+WebSite: https://github.com/Crescentric-Labs/freeprint
+SourceCode: https://github.com/Crescentric-Labs/freeprint
+IssueTracker: https://github.com/Crescentric-Labs/freeprint/issues
+Changelog: https://github.com/Crescentric-Labs/freeprint/blob/HEAD/CHANGELOG.md
+
+AutoName: Free Print
+
+RepoType: git
+Repo: https://github.com/Crescentric-Labs/freeprint.git
+
+Builds:
+  - versionName: 2.0.2
+    versionCode: 5
+    commit: v2.0.2
+    subdir: app
+    sudo:
+      - apt-get update || apt-get update
+      - apt-get install -y openjdk-17-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - yes
+    ndk: r27c
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 2.0.2
+CurrentVersionCode: 5
