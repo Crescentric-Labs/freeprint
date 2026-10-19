@@ -9,6 +9,11 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-10-20
+
+### Fixed
+- Release APKs are now signed so that anyone can rebuild a release from the source and confirm, byte for byte, that it matches the published file (F-Droid does exactly this). The app itself is unchanged from 2.0.4.
+
 ## [2.0.4] - 2026-10-20
 
 ### Fixed
