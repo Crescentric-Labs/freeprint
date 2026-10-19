@@ -17,6 +17,10 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 - Shared text (a note, a message, an address, a link) and text files are turned into a printable A4 PDF, with the subject as a heading.
 - A new launcher icon: the printer on a plain deep-blue field, with no card or outline of its own.
 - The printer artwork in the top bar and on the About page now sits on its own, without a background tile.
+- A changelog inside the app: **About → Changelog** unfolds every release, with the version as a pill and its date on the right.
+
+### Changed
+- The **Load sample PDF** button is gone from Diagnostics, together with the bundled sample files.
 
 ### Fixed
 - The app crashed at start-up when it was opened from a share or "open with". The splash screen's exit animation assumed an icon that Android does not always provide.
