@@ -85,6 +85,7 @@ jobs:
             --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --alignment-preserved --out "FreePrint-$VERSION.apk" "$RUNNER_TEMP/aligned.apk"
           "$bt/apksigner" verify --print-certs "FreePrint-$VERSION.apk"
           sha256sum "FreePrint-$VERSION.apk" > "FreePrint-$VERSION.apk.sha256"
+          cp "FreePrint-$VERSION.apk" FreePrint.apk
           rm -f "$RUNNER_TEMP/release.jks"
 
       - name: Publish the release
@@ -99,8 +100,8 @@ jobs:
           } > "$RUNNER_TEMP/body.md"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" ${flags[@]+"${flags[@]}"}
-            gh release upload "$TAG" --clobber "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
+            gh release upload "$TAG" --clobber "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256" FreePrint.apk
           else
             gh release create "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" ${flags[@]+"${flags[@]}"} \
-              "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
+              "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256" FreePrint.apk
           fi
