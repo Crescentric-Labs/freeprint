@@ -203,14 +203,14 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Licence | GPL-3.0 (libusb 1.0.30, LGPL-2.1+, bundled) |
 | Android | min 8.0 (API 26), target and compile 35 |
 | ABI | arm64-v8a only |
-| Release APK | about **11.9 MB** unsigned (`assembleRelease`, no minification); debug about 17.6 MB |
+| Release APK | **11.9 MiB** (12,496,421 bytes for 2.0.2, signed; no minification); the debug build is about 17.6 MiB |
 | Native code | about 750 lines of C++ of our own, plus vendored libusb |
 | Permissions | **none** |
 | Dependencies | 8 libraries: AndroidX (core, activity, lifecycle, splash screen), Jetpack Compose (UI, Material 3, icons, via the Compose BOM) and kotlinx.coroutines. All Apache-2.0 |
-| Languages | English, Sinhala (275 strings and 8 plurals in each) |
-| Source | 38 Kotlin files (about 7.3k lines), 14 test classes (about 0.8k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
-| Tests | **119 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
-| History | 290+ commits, one file per commit |
+| Languages | English, Sinhala (274 strings and 8 plurals in each) |
+| Source | 38 Kotlin files (about 7.4k lines), 15 test classes (about 0.8k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
+| Tests | **126 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
+| History | 380+ commits, one file per commit; 5 releases, 5 tags |
 | Build | Gradle 8.10.2, AGP 8.7.3, Kotlin 2.0.21, JDK 17, NDK 27.2, CMake 3.22.1 |
 
 ## Releases and deployment
@@ -224,7 +224,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Signing | one release key, the same for every release. Certificate SHA-256: `9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f` |
 | APK signature schemes | v2 and v3 (minimum Android 8.0) |
 | Pipeline | a `vX.Y.Z` tag → [GitHub Actions](.github/workflows) builds and tests it → a signed APK and the changelog become the release. Done on a laptop today with `tools/release.sh`; Actions can take over once the signing secrets are added ([docs/releasing.md](docs/releasing.md)) |
-| Continuous integration | on every push and pull request: strings in step with the generator, 119 unit tests, a debug build and a release build, and a check that the changelog has an entry for the version. A full run takes about 10 minutes from a cold cache |
+| Continuous integration | on every push and pull request: strings in step with the generator, 126 unit tests, a debug build and a release build, and a check that the changelog has an entry for the version. A full run takes about 10 minutes from a cold cache |
 | Local release build | about a minute (`./gradlew assembleRelease`) |
 | Store listing | F-Droid metadata ready in `fastlane/`: 1 language (en-US), title, short and full description, 2 version changelogs, icon and 8 screenshots |
 | Reproducible builds | not yet; F-Droid signs with its own key |
@@ -276,7 +276,7 @@ export PATH="$ANDROID_HOME/platform-tools:$PATH"
 git clone https://github.com/Crescentric-Labs/freeprint.git
 cd freeprint
 
-./gradlew testDebugUnitTest          # 119 unit tests, a few seconds
+./gradlew testDebugUnitTest          # 126 unit tests, a few seconds
 ./gradlew assembleDebug              # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease            # app/build/outputs/apk/release/app-release-unsigned.apk (what F-Droid builds)
 adb install -r app/build/outputs/apk/debug/app-debug.apk
