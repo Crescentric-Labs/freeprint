@@ -1,0 +1,105 @@
+name: Release
+
+# Pushing a tag such as v2.0.1 builds that tag, signs the APK and publishes it as a GitHub release whose notes are the
+# matching CHANGELOG.md section. Signing needs four repository secrets (see docs/releasing.md); without them the build is still
+# checked but nothing is published, and the run says so.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "An existing tag to build and publish, for example v2.0.1"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, sign and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      - name: The tag matches the version in the build file
+        run: |
+          version="${TAG#v}"
+          built="$(sed -n 's/.*versionName = "\(.*\)"/\1/p' app/build.gradle.kts)"
+          [ "$built" = "$version" ] || { echo "::error::tag $TAG but versionName is $built"; exit 1; }
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install the NDK and CMake
+        run: |
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          set -o pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
+
+      - name: Test and build
+        run: ./gradlew testDebugUnitTest assembleRelease --console=plain
+
+      - name: Release notes from the changelog
+        run: .github/scripts/release-notes.sh "$VERSION" > "$RUNNER_TEMP/notes.md"
+
+      - name: Is signing set up?
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No signing secrets, so nothing was published. See docs/releasing.md."
+          fi
+
+      - name: Sign
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          bt="$ANDROID_HOME/build-tools/35.0.0"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          "$bt/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$bt/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD --v4-signing-enabled false --out "FreePrint-$VERSION.apk" "$RUNNER_TEMP/aligned.apk"
+          "$bt/apksigner" verify --print-certs "FreePrint-$VERSION.apk"
+          sha256sum "FreePrint-$VERSION.apk" > "FreePrint-$VERSION.apk.sha256"
+          rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: Publish the release
+        if: steps.signing.outputs.enabled == 'true'
+        run: |
+          flags=(); case "$VERSION" in 0.*) flags+=(--prerelease);; esac
+          sha="$(cut -d' ' -f1 "FreePrint-$VERSION.apk.sha256")"
+          {
+            cat "$RUNNER_TEMP/notes.md"
+            printf '\n---\n\n**Install:** download `FreePrint-%s.apk` below and open it on an Android 8.0+ phone with a 64-bit ARM processor.\n\n' "$VERSION"
+            printf 'SHA-256: `%s`\n\nFull history: [CHANGELOG.md](https://github.com/%s/blob/main/CHANGELOG.md)\n' "$sha" "$GITHUB_REPOSITORY"
+          } > "$RUNNER_TEMP/body.md"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" "${flags[@]}"
+            gh release upload "$TAG" --clobber "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
+          else
+            gh release create "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" "${flags[@]}" \
+              "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
+          fi
