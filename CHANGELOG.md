@@ -9,7 +9,10 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-10-20
+
 ### Changed
+- A text file shared to Free Print (a `.txt`, `.md`, `.csv` and so on) now opens as a PDF named after the file, such as "Garden-meeting-notes", instead of "Shared text".
 - The project now lives in the Crescentric-Labs organisation on GitHub, and the source link on the About screen points there.
 
 ## [2.0.1] - 2026-10-19
