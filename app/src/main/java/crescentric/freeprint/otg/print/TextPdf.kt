@@ -22,7 +22,18 @@ object TextPdf {
     /** Beyond this a share is cut off, so a huge paste cannot fill the phone with pages. */
     private const val MAX_CHARS = 400_000
 
-    fun render(context: Context, text: String, title: String? = null): File {
+    /**
+     * The name for the finished PDF, without ".pdf": the shared file's own name with its extension dropped when there is one,
+     * else the subject, else "Shared text". Characters a file name cannot hold are replaced and the name is kept short.
+     */
+    fun pdfName(fileName: String?, title: String?): String {
+        fun clean(s: String?) = s?.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]"), " ")?.trim()?.take(40)?.takeIf { it.isNotEmpty() }
+        val base = fileName?.substringBeforeLast('.', fileName)?.let(::clean)
+        return base ?: clean(title) ?: "Shared text"
+    }
+
+    /** [fileName] is the name of the file the text came from, if it came from one; it names the PDF (see [pdfName]). */
+    fun render(context: Context, text: String, title: String? = null, fileName: String? = null): File {
         val body = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { textSize = 11.5f; color = Color.BLACK; typeface = Typeface.SANS_SERIF }
         val head = TextPaint(body).apply { textSize = 16f; isFakeBoldText = true }
         val width = PAGE_W - 2 * MARGIN
@@ -57,8 +68,8 @@ object TextPdf {
         }
         page?.let { doc.finishPage(it) }
 
-        // Named after the subject when there is one, so the file list shows something readable; the folder keeps names apart
-        val name = title?.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]"), " ")?.trim()?.take(40)?.takeIf { it.isNotEmpty() } ?: "Shared text"
+        // Named after the shared file, else the subject, so the file list shows something readable; the folder keeps names apart
+        val name = pdfName(fileName, title)
         val dir = File(context.cacheDir, "shared/${System.currentTimeMillis()}").apply { mkdirs() }
         val file = File(dir, "$name.pdf")
         file.outputStream().use { doc.writeTo(it) }
