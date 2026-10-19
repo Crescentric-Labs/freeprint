@@ -65,12 +65,12 @@ per-model driver to write.
     <td align="center"><img src="docs/screenshots/06-about-changelog.png" width="210" alt="About page with the changelog expanded"><br><sub><b>About</b><br>licences, diagnostics, changelog</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/10-light-home.png" width="210" alt="Light theme start screen"><br><sub><b>Light theme</b><br>follows the phone</sub></td>
-    <td align="center"><img src="docs/screenshots/11-light-workspace.png" width="210" alt="Light theme with a document"><br><sub><b></b><br>preview and page strip</sub></td>
-    <td align="center"><img src="docs/screenshots/12-light-settings.png" width="210" alt="Light theme settings and two-sided pills"><br><sub><b></b><br>two-sided is highlighted on the bar</sub></td>
+    <td align="center"><img src="docs/screenshots/10-light-home.png" width="210" alt="Light theme start screen"><br><sub><b>Light theme: Print</b><br>follows the phone</sub></td>
+    <td align="center"><img src="docs/screenshots/11-light-workspace.png" width="210" alt="Light theme with a document"><br><sub><b>Light theme: preview</b><br>document and page strip</sub></td>
+    <td align="center"><img src="docs/screenshots/12-light-settings.png" width="210" alt="Light theme settings and two-sided pills"><br><sub><b>Light theme: settings</b><br>two-sided is highlighted on the bar</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/13-light-scan.png" width="210" alt="Light theme scan tab"><br><sub><b></b><br>scan, in light</sub></td>
+    <td align="center"><img src="docs/screenshots/13-light-scan.png" width="210" alt="Light theme scan tab"><br><sub><b>Light theme: Scan</b><br>the same cable, in light</sub></td>
     <td align="center"><img src="docs/screenshots/14-sinhala-home.png" width="210" alt="The app in Sinhala"><br><sub><b>Sinhala (සිංහල)</b><br>switch language inside the app</sub></td>
     <td></td>
   </tr>
