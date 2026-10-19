@@ -225,7 +225,6 @@ S = {
  "scan_err_cannot_open": ("Could not open the scanner. Is the printer in use?", "ස්කෑනරය විවෘත කළ නොහැකි විය. මුද්‍රණ යන්ත්‍රය භාවිතයේ තිබේද?"),
  "scan_err_save": ("Could not save the file.", "ගොනුව සුරැකිය නොහැකි විය."),
  "diag_test": ("Print test page", "පරීක්ෂණ පිටුව මුද්‍රණය"),
- "diag_sample": ("Load sample PDF", "නියැදි PDF පූරණය"),
  "diag_clear": ("Clear", "මකන්න"),
  "diag_prompt": ("Select an action above to query your connected USB printer.", "සම්බන්ධ කර ඇති USB මුද්‍රණ යන්ත්‍රය විමසීමට ඉහත ක්‍රියාවක් තෝරන්න."),
  "viewer_hint": ("Pinch or double-tap to zoom. Swipe to change sheet.", "විශාල කිරීමට පින්ච් කරන්න හෝ දෙවරක් තට්ටු කරන්න. පත්‍රය මාරු කිරීමට ස්වයිප් කරන්න."),
