@@ -290,7 +290,11 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
                     val type = runCatching { ctx.contentResolver.getType(u) }.getOrNull()
                     if (type != null && type.startsWith("text/")) {
                         val body = runCatching { ctx.contentResolver.openInputStream(u)?.bufferedReader()?.use { it.readText() } }.getOrNull()
-                        if (!body.isNullOrBlank()) out += Uri.fromFile(TextPdf.render(ctx, body, null)) else out += u
+                        val shownName = runCatching {
+                            ctx.contentResolver.query(u, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                                ?.use { c -> if (c.moveToFirst()) c.getString(0) else null }
+                        }.getOrNull()
+                        if (!body.isNullOrBlank()) out += Uri.fromFile(TextPdf.render(ctx, body, null, fileName = shownName)) else out += u
                     } else out += u
                 }
                 out
