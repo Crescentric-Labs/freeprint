@@ -1,0 +1,28 @@
+Free Print lets you print and scan with a USB printer plugged straight into your phone with an OTG adapter. It needs no printer driver, no print server, no Wi-Fi and no internet connection. The app has no internet permission at all, collects nothing and shows no ads.
+
+<b>Print</b>
+• PDFs and pictures, several at once and mixed in one job
+• Live preview of every sheet, a thumbnail strip, swipe between sheets and a zoomable full-screen view
+• Page ranges ("1-3, 5, 8-10"), odd or even pages, tap-to-pick page numbers
+• 1 to 8 pages per sheet, fit / fill / actual size, scaling, margins, position, orientation
+• A4, Letter, A5, A6, B5, Legal, Executive, 4 x 6, 5 x 7 and 8 x 10 paper
+• Collated copies, draft / normal / high quality, colour or grayscale
+• Manual two-sided printing for printers without a duplexer, with an animated guide for turning the stack
+• Pause a job between sheets
+• "Optimize for print" for photographed documents: whitens the paper, evens out shadows, deepens the ink, page by page and undoable
+
+<b>Scan</b>
+• Scan from the printer's glass over the same USB cable (eSCL / AirScan)
+• Scan several pages, delete and restore pages, optimize them
+• Save as a PDF or as pictures, as scanned or laid out on paper sheets with the print settings
+• Share the result, or print a copy
+
+<b>Works with the rest of your phone</b>
+• Share PDFs, pictures and text to Free Print from any app, or open files with it
+• A system print service: print from any app through Android's own print dialog
+• English and Sinhala, with a language switch inside the app
+
+<b>Requirements</b>
+A phone with USB host (OTG) support running Android 8 or newer on a 64-bit ARM processor, an OTG adapter, and a printer that exposes the standard IPP-over-USB interface (most printers sold in the last decade). Developed and tested on a Canon PIXMA G2020 with a Samsung Galaxy S25 Ultra; other printers are expected to work but have not all been tried.
+
+Free software under the GNU General Public License v3.0. Built with Kotlin, Jetpack Compose and libusb.
