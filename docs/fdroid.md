@@ -1,0 +1,114 @@
+# Publishing to F-Droid
+
+This is the checklist and the notes for getting Free Print into the [F-Droid](https://f-droid.org) main repository, and for
+keeping it there. F-Droid builds the app **from source** on its own servers and signs it with its own key, so nothing here is
+uploaded: the work is making sure the source builds cleanly and describing the app.
+
+## What the project already does for F-Droid
+
+| F-Droid expects | State |
+|---|---|
+| A free-software licence | GPL-3.0 (`LICENSE`); the bundled libusb is LGPL-2.1-or-later and compatible |
+| Everything built from source | Kotlin and C++ only. libusb 1.0.30 is vendored as source in `app/src/main/cpp/third_party/libusb/`; no prebuilt `.so`, `.jar` or `.aar` is committed (the Gradle wrapper jar is the one standard exception) |
+| No proprietary dependencies | AndroidX, Jetpack Compose, Kotlin coroutines, all Apache-2.0. No Google Play services, no Firebase, no analytics, no ads |
+| No tracking or network use | The manifest declares **no permissions**, in particular not `INTERNET` |
+| No anti-features | None apply: no ads, no tracking, no non-free network services, no non-free assets or dependencies |
+| No dependency blob in the APK | `dependenciesInfo { includeInApk = false }` in `app/build.gradle.kts` (AGP otherwise adds a Google-signed block that F-Droid rejects and that breaks reproducible builds) |
+| A build that works from a clean checkout | `./gradlew assembleRelease` succeeds with no signing config and no local files other than the SDK path |
+| Version in the build file | `versionName` and `versionCode` are plain literals in `app/build.gradle.kts`, so F-Droid can read them |
+| Store texts and images | `fastlane/metadata/android/en-US/`: title, short and full description, per-version changelogs, icon, screenshots |
+| A tag per release | Tag the release commit `vX.Y.Z` (see below) |
+
+## Before the first submission
+
+1. **Make the repository public** and confirm the URL in `README.md`, `app/.../AboutScreen.kt` (`SOURCE_URL`) and
+   `docs/fdroid.md` is right.
+2. **Run a clean release build** on a machine that has nothing else set up:
+   ```sh
+   git clone https://github.com/ChethiyaNuwan/freeprint.git && cd freeprint
+   ./gradlew clean assembleRelease
+   ```
+   The unsigned APK is at `app/build/outputs/apk/release/app-release-unsigned.apk`.
+3. **Check the screenshots** in `fastlane/metadata/android/en-US/images/phoneScreenshots/` still match the app.
+4. **Check the licence story**: the About screen shows the GPL notice and the libusb credit and lets people read both texts.
+5. **Tag the release** and push the tag (`git tag v2.0.1 && git push origin v2.0.1`).
+6. **Open a merge request** against [fdroiddata](https://gitlab.com/fdroid/fdroiddata) adding
+   `metadata/crescentric.freeprint.otg.yml` (draft below). Follow the
+   [inclusion how-to](https://f-droid.org/docs/Inclusion_How-To/); the reviewers will run their scanner and a test build and
+   may ask for small changes.
+
+## Draft `metadata/crescentric.freeprint.otg.yml`
+
+```yaml
+Categories:
+  - System
+License: GPL-3.0-only
+AuthorName: Crescentric
+WebSite: https://github.com/ChethiyaNuwan/freeprint
+SourceCode: https://github.com/ChethiyaNuwan/freeprint
+IssueTracker: https://github.com/ChethiyaNuwan/freeprint/issues
+Changelog: https://github.com/ChethiyaNuwan/freeprint/blob/HEAD/CHANGELOG.md
+
+AutoName: Free Print
+
+RepoType: git
+Repo: https://github.com/ChethiyaNuwan/freeprint.git
+
+Builds:
+  - versionName: 2.0.1
+    versionCode: 4
+    commit: v2.0.1
+    subdir: app
+    sudo:
+      - apt-get update || apt-get update
+      - apt-get install -y openjdk-17-jdk-headless
+      - update-java-alternatives -a
+    gradle:
+      - yes
+    ndk: r27c
+    # CMake 3.22.1 is installed by the Android Gradle plugin from the SDK; no extra step.
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 2.0.1
+CurrentVersionCode: 4
+```
+
+Notes on the draft:
+
+- `ndk: r27c` is the NDK this project is built with (`27.2.12479018`). If the build server does not offer that exact one, ask
+  in the merge request or change `ndkVersion` in `app/build.gradle.kts` to one it has.
+- The licence is declared as `GPL-3.0-only` because the project's `LICENSE` and About screen say "version 3" without "or later".
+  If you want "or later", say so in the notices (and in the About text) first and change this line.
+- `UpdateCheckMode: Tags` plus `AutoUpdateMode: Version` makes F-Droid pick up each new `vX.Y.Z` tag by itself, as long as
+  `versionName`/`versionCode` in that tag match.
+- Add `AntiFeatures` only if one ever applies. None does today.
+
+## Releasing a new version
+
+1. Put the changes under `## [Unreleased]` in `CHANGELOG.md` as you work, one plain line each.
+2. To release: rename that heading to `## [X.Y.Z] - YYYY-MM-DD`, add a fresh empty `## [Unreleased]` above it.
+3. In `app/build.gradle.kts` set `versionName = "X.Y.Z"` and raise `versionCode` by one.
+4. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (500 bytes at most, a few bullet lines).
+5. Run `./gradlew testDebugUnitTest assembleRelease`, fix anything red, and refresh the screenshots if the UI changed.
+6. Commit, then `git tag vX.Y.Z` and push the branch and the tag.
+7. F-Droid notices the tag on its next check (usually within a day or two) and builds it. Nothing else to do.
+
+The in-app changelog (About, Changelog) reads `CHANGELOG.md` directly: the build copies it into the app's assets, so the
+file and the app cannot drift apart.
+
+## Signing and reproducible builds
+
+F-Droid signs with its own key, so there is no keystore in this repository and you do not need one for F-Droid. If you also
+want to publish your own signed APKs (for example on GitHub Releases), keep that keystore **out of the repository**, and note
+that the two signatures differ, so users cannot update from one source to the other without uninstalling first.
+[Reproducible builds](https://f-droid.org/docs/Reproducible_Builds/) would let F-Droid ship *your* signed APK; that needs a
+byte-identical build on their server and is worth trying later, not for the first submission.
+
+## Things that commonly delay a submission
+
+- A `build/` folder, `local.properties`, a keystore or an `.apk` committed by accident (this project's `.gitignore` covers them).
+- A dependency or plugin that fetches something at build time from a non-standard repository: only `google()` and
+  `mavenCentral()` are used here.
+- Store text that mentions a non-free service or a price.
+- A store description claiming support the app cannot back up: Free Print says exactly which printer it was tested on.
