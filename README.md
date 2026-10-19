@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="fastlane/metadata/android/en-US/images/icon.png" width="128" alt="Free Print icon" />
+<img src="docs/images/app-icon.png" width="180" alt="Free Print icon" />
 
 # Free Print
 
@@ -45,19 +45,38 @@ per-model driver to write.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/01-print-home.png" width="220" alt="Print tab start screen"><br><sub><b>Print</b><br>the start screen and the dock</sub></td>
-    <td align="center"><img src="docs/screenshots/02-print-workspace.png" width="220" alt="A document loaded, with preview, page strip and settings"><br><sub><b>Preview and settings</b><br>live preview, page strip, tiles</sub></td>
-    <td align="center"><img src="docs/screenshots/03-print-bar.png" width="220" alt="The print bar with the settings in effect as pills"><br><sub><b>The print bar</b><br>sides to print, settings as pills</sub></td>
+    <td align="center"><img src="docs/screenshots/01-print-home.png" width="210" alt="Print tab start screen"><br><sub><b>Print</b><br>start screen and dock</sub></td>
+    <td align="center"><img src="docs/screenshots/02-print-workspace.png" width="210" alt="A PDF and a photo loaded together"><br><sub><b>PDFs and pictures together</b><br>mix them, drag to reorder</sub></td>
+    <td align="center"><img src="docs/screenshots/03-print-bar.png" width="210" alt="Settings tiles and the print bar with pills"><br><sub><b>Every setting</b><br>tiles, and the bar shows what is set</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/04-settings-dialog.png" width="220" alt="A settings popup"><br><sub><b>Every setting</b><br>one popup each</sub></td>
-    <td align="center"><img src="docs/screenshots/05-scan-home.png" width="220" alt="The Scan tab"><br><sub><b>Scan</b><br>over the same USB cable</sub></td>
-    <td align="center"><img src="docs/screenshots/06-about-changelog.png" width="220" alt="The About page with the changelog expanded"><br><sub><b>About</b><br>licences, changelog, diagnostics</sub></td>
+    <td align="center"><img src="docs/screenshots/15-before-optimize.png" width="210" alt="A photographed page with uneven light"><br><sub><b>Optimize for print</b><br>a photo of a notice, shadows and grey paper</sub></td>
+    <td align="center"><img src="docs/screenshots/16-after-optimize.png" width="210" alt="The same page after optimizing"><br><sub><b>...one tap later</b><br>white paper, even light, crisp ink</sub></td>
+    <td align="center"><img src="docs/screenshots/17-multi-per-sheet.png" width="210" alt="Four pages per sheet, mixing a PDF and a photo"><br><sub><b>Several pages per sheet</b><br>two PDF pages and the photo on one sheet</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/04-settings-dialog.png" width="210" alt="Copies setting"><br><sub><b>Copies</b><br>collated, up to 99</sub></td>
+    <td align="center"><img src="docs/screenshots/08-pages-to-print.png" width="210" alt="Pages to print with page-number pills"><br><sub><b>Pages to print</b><br>ranges, odd or even, tap-to-pick pills</sub></td>
+    <td align="center"><img src="docs/screenshots/09-two-sided.png" width="210" alt="Two-sided printing options"><br><sub><b>Two-sided without a duplexer</b><br>long or short edge, guided flip</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/07-fullscreen-viewer.png" width="210" alt="Full-screen viewer"><br><sub><b>Full-screen viewer</b><br>zoom, pan, swipe, optimize</sub></td>
+    <td align="center"><img src="docs/screenshots/05-scan-home.png" width="210" alt="Scan tab"><br><sub><b>Scan</b><br>over the same USB cable</sub></td>
+    <td align="center"><img src="docs/screenshots/06-about-changelog.png" width="210" alt="About page with the changelog expanded"><br><sub><b>About</b><br>licences, diagnostics, changelog</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/10-light-home.png" width="210" alt="Light theme start screen"><br><sub><b>Light theme</b><br>follows the phone</sub></td>
+    <td align="center"><img src="docs/screenshots/11-light-workspace.png" width="210" alt="Light theme with a document"><br><sub><b></b><br>preview and page strip</sub></td>
+    <td align="center"><img src="docs/screenshots/12-light-settings.png" width="210" alt="Light theme settings and two-sided pills"><br><sub><b></b><br>two-sided is highlighted on the bar</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/13-light-scan.png" width="210" alt="Light theme scan tab"><br><sub><b></b><br>scan, in light</sub></td>
+    <td align="center"><img src="docs/screenshots/14-sinhala-home.png" width="210" alt="The app in Sinhala"><br><sub><b>Sinhala (සිංහල)</b><br>switch language inside the app</sub></td>
+    <td></td>
   </tr>
 </table>
 
-<sub>Screenshots are taken in an Android emulator, which has no USB host, so the printer card shows "No USB printer
-connected". Everything else is the real app. Light and dark themes both follow the phone.</sub>
+<sub>Screenshots are taken in an Android emulator, which has no USB host, so the printer card says "No USB printer connected". Everything else is the real app. The sample PDF and the photographed notice are made-up demo files. The dark and light themes both follow the phone.</sub>
 
 ## Features
 
