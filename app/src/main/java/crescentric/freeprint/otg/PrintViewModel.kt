@@ -572,14 +572,6 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Loads a bundled multi-page PDF (handy for checking layouts without a printer). */
-    fun openSample() {
-        val ctx = getApplication<Application>()
-        val f = java.io.File(ctx.cacheDir, "sample-multi.pdf")
-        ctx.assets.open("sample-multi.pdf").use { i -> f.outputStream().use { o -> i.copyTo(o) } }
-        open(Uri.fromFile(f))
-    }
-
     // ---- diagnostics (spike tools kept for troubleshooting) ----
 
     fun describePrinter() { diagnostics += (device?.let { usb.describe(it) } ?: "No USB printer found.") + "\n" }
