@@ -1,0 +1,61 @@
+name: Printer report
+description: Tell us whether your printer works with Free Print (the most useful report there is)
+title: "Printer report: <brand and model>"
+labels: ["printer-report"]
+body:
+  - type: input
+    id: printer
+    attributes:
+      label: Printer
+      description: Brand and exact model
+      placeholder: Canon PIXMA G2020
+    validations: { required: true }
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and Android version
+      placeholder: Samsung Galaxy S25 Ultra, Android 15
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Free Print version
+      description: Shown on About
+      placeholder: 2.0.1
+    validations: { required: true }
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it print?
+      options:
+        - Yes, everything I tried works
+        - Prints, but with problems (describe below)
+        - Detected, but nothing prints
+        - Not detected at all
+    validations: { required: true }
+  - type: dropdown
+    id: scan
+    attributes:
+      label: Does scanning work?
+      options:
+        - Yes
+        - No
+        - My printer has no scanner
+        - Did not try
+    validations: { required: true }
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Output of About → Diagnostics → Interfaces
+      description: Look for an interface with class 7, subclass 1, protocol 4
+      render: text
+  - type: textarea
+    id: ipp
+    attributes:
+      label: Output of Diagnostics → IPP attributes
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: What happened
+      description: What came out of the printer, any error text, and anything else that seems relevant
