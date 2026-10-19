@@ -14,6 +14,9 @@ No drivers. No internet. No ads. No account. Free software.
 [![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-7F52FF.svg)](#how-it-works)
 [![Get it on F-Droid](https://img.shields.io/badge/F--Droid-submission%20planned-orange.svg)](docs/fdroid.md)
+[![CI](https://github.com/ChethiyaNuwan/freeprint/actions/workflows/ci.yml/badge.svg)](https://github.com/ChethiyaNuwan/freeprint/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/ChethiyaNuwan/freeprint?label=release)](https://github.com/ChethiyaNuwan/freeprint/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/ChethiyaNuwan/freeprint/total)](https://github.com/ChethiyaNuwan/freeprint/releases)
 
 [Features](#features) ·
 [Screenshots](#screenshots) ·
@@ -72,7 +75,7 @@ per-model driver to write.
   <tr>
     <td align="center"><img src="docs/screenshots/13-light-scan.png" width="210" alt="Light theme scan tab"><br><sub><b>Light theme: Scan</b><br>the same cable, in light</sub></td>
     <td align="center"><img src="docs/screenshots/14-sinhala-home.png" width="210" alt="The app in Sinhala"><br><sub><b>Sinhala (සිංහල)</b><br>switch language inside the app</sub></td>
-    <td></td>
+    <td align="center"><img src="docs/screenshots/18-shared-text.png" width="210" alt="Shared text opened as a printable PDF"><br><sub><b>Share to Free Print</b><br>a note shared from another app, printed as a PDF</sub></td>
   </tr>
 </table>
 
@@ -209,6 +212,31 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Tests | **119 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
 | History | 290+ commits, one file per commit |
 | Build | Gradle 8.10.2, AGP 8.7.3, Kotlin 2.0.21, JDK 17, NDK 27.2, CMake 3.22.1 |
+
+## Releases and deployment
+
+| | |
+|---|---|
+| Latest release | **2.0.1** (versionCode 4), published 2026-10-19 |
+| Releases so far | 4 (one pre-release), all on [GitHub Releases](https://github.com/ChethiyaNuwan/freeprint/releases) |
+| Every release has | a signed APK, a `.sha256` checksum file, and its section of the [changelog](CHANGELOG.md) as the release notes |
+| Distribution | GitHub Releases: **live**. F-Droid: **prepared, not yet submitted** ([docs/fdroid.md](docs/fdroid.md)). Google Play: not planned |
+| Signing | one release key, the same for every release. Certificate SHA-256: `9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f` |
+| APK signature schemes | v2 and v3 (minimum Android 8.0) |
+| Pipeline | a `vX.Y.Z` tag → [GitHub Actions](.github/workflows) builds and tests it → a signed APK and the changelog become the release. Done on a laptop today with `tools/release.sh`; Actions can take over once the signing secrets are added ([docs/releasing.md](docs/releasing.md)) |
+| Continuous integration | on every push and pull request: strings in step with the generator, 119 unit tests, a debug build and a release build, and a check that the changelog has an entry for the version. A full run takes about 10 minutes from a cold cache |
+| Local release build | about a minute (`./gradlew assembleRelease`) |
+| Store listing | F-Droid metadata ready in `fastlane/`: 1 language (en-US), title, short and full description, 2 version changelogs, icon and 8 screenshots |
+| Reproducible builds | not yet; F-Droid signs with its own key |
+
+| Version | versionCode | Released | APK size | SHA-256 (start) | Notes |
+|---|:-:|---|--:|---|---|
+| [2.0.1](https://github.com/ChethiyaNuwan/freeprint/releases/tag/v2.0.1) | 4 | 2026-10-19 | 11.9 MiB | `044649d2148e…` | share and open-with, text to PDF, new icon, in-app changelog |
+| [2.0.0](https://github.com/ChethiyaNuwan/freeprint/releases/tag/v2.0.0) | 3 | 2026-10-19 | 12.1 MiB | `1a7ace8ed174…` | home screen and dock, copies, pause, optimize for print, scan saving |
+| [1.0.0](https://github.com/ChethiyaNuwan/freeprint/releases/tag/v1.0.0) | 1 | 2026-10-19 | 11.9 MiB | `c8ee66738cf8…` | About screen, licences |
+| [0.1.0](https://github.com/ChethiyaNuwan/freeprint/releases/tag/v0.1.0) | 1 | 2026-10-19 | 11.9 MiB | `2b1683c710f2…` | first working version (pre-release, other app ID) |
+
+<sub>The version dates are when each release was published on GitHub; the changelog gives the dates the work was done (all between 2026-10-11 and 2026-10-19). Download counts are on the release pages and in the badge above; they are not copied here so they cannot go stale. The badges work once the repository is public.</sub>
 
 ## Developer setup
 
