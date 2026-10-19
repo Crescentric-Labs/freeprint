@@ -9,6 +9,11 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-10-20
+
+### Changed
+- The app is now built reproducibly: the same source gives the very same APK on any computer. Anyone, F-Droid included, can rebuild a release and check that it matches the published file.
+
 ## [2.0.2] - 2026-10-20
 
 ### Changed
