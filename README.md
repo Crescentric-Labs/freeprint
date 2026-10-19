@@ -8,7 +8,7 @@
 No drivers. No internet. No ads. No account. Free software.
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.1-brightgreen.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.2-brightgreen.svg)](CHANGELOG.md)
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84.svg)](#requirements)
 [![arm64](https://img.shields.io/badge/ABI-arm64--v8a-lightgrey.svg)](#requirements)
 [![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
@@ -199,7 +199,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | | |
 |---|---|
 | App ID | `crescentric.freeprint.otg` |
-| Version | 2.0.1 (versionCode 4); see the [changelog](CHANGELOG.md) |
+| Version | 2.0.2 (versionCode 5); see the [changelog](CHANGELOG.md) |
 | Licence | GPL-3.0 (libusb 1.0.30, LGPL-2.1+, bundled) |
 | Android | min 8.0 (API 26), target and compile 35 |
 | ABI | arm64-v8a only |
@@ -217,8 +217,8 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 
 | | |
 |---|---|
-| Latest release | **2.0.1** (versionCode 4), published 2026-10-19 |
-| Releases so far | 4 (one pre-release), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
+| Latest release | **2.0.2** (versionCode 5), published 2026-10-19 (UTC) |
+| Releases so far | 5 (one pre-release), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
 | Every release has | a signed APK, a `.sha256` checksum file, and its section of the [changelog](CHANGELOG.md) as the release notes |
 | Distribution | GitHub Releases: **live**. F-Droid: **prepared, not yet submitted** ([docs/fdroid.md](docs/fdroid.md)). Google Play: not planned |
 | Signing | one release key, the same for every release. Certificate SHA-256: `9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f` |
@@ -231,12 +231,13 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 
 | Version | versionCode | Released | APK size | SHA-256 (start) | Notes |
 |---|:-:|---|--:|---|---|
+| [2.0.2](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.2) | 5 | 2026-10-19 | 11.9 MiB | `32e7b13c8cb8…` | shared text files get their own name, source link moved |
 | [2.0.1](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.1) | 4 | 2026-10-19 | 11.9 MiB | `044649d2148e…` | share and open-with, text to PDF, new icon, in-app changelog |
 | [2.0.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.0) | 3 | 2026-10-19 | 12.1 MiB | `1a7ace8ed174…` | home screen and dock, copies, pause, optimize for print, scan saving |
 | [1.0.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v1.0.0) | 1 | 2026-10-19 | 11.9 MiB | `c8ee66738cf8…` | About screen, licences |
 | [0.1.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v0.1.0) | 1 | 2026-10-19 | 11.9 MiB | `2b1683c710f2…` | first working version (pre-release, other app ID) |
 
-<sub>The version dates are when each release was published on GitHub; the changelog gives the dates the work was done (all between 2026-10-11 and 2026-10-19). Download counts are on the release pages and in the badge above; they are not copied here so they cannot go stale. The badges work once the repository is public.</sub>
+<sub>The version dates are when each release was published on GitHub (UTC, so a late-evening release can show the day before the changelog's local date); the changelog gives the dates the work was done (all between 2026-10-11 and 2026-10-19). Download counts are on the release pages and in the badge above; they are not copied here so they cannot go stale. The badges work once the repository is public.</sub>
 
 ## Developer setup
 
