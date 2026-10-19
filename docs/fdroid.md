@@ -41,7 +41,7 @@ uploaded: the work is making sure the source builds cleanly and describing the a
 
 The file F-Droid needs is kept here: [`docs/fdroid/crescentric.freeprint.otg.yml`](fdroid/crescentric.freeprint.otg.yml). It has
 been checked with F-Droid's own tools (`fdroid lint` is clean and `fdroid rewritemeta` leaves it unchanged), and
-`fdroid build` built tag `v2.0.2` from it into an APK on the author's Mac.
+`fdroid build` rebuilt tag `v2.0.5` from it on the author's Mac and its reference-binary check verified the result against the GitHub APK.
 
 Notes on it:
 
@@ -92,8 +92,9 @@ It is also an Android print service. The app declares no permissions at all.
 - No ads, no tracking, no network access, no non-free dependencies or assets
 - Built from source with Gradle; native code with CMake and NDK r27c (arm64-v8a only)
 - dependenciesInfo is disabled in the APK
+- Reproducible builds: Binaries and AllowedAPKSigningKeys are set; the build verifies against the published APK
 - Store texts, changelogs, icon and screenshots are in the app repository under fastlane/metadata
-- fdroid lint is clean; fdroid build succeeds locally for v2.0.2
+- fdroid lint is clean; fdroid build succeeds locally for v2.0.5 and verifies against the GitHub release APK (reproducible build)
 ```
 
 After it is merged F-Droid builds, signs and publishes the app (the first listing can take a few days), and later versions need
@@ -114,11 +115,18 @@ file and the app cannot drift apart.
 
 ## Signing and reproducible builds
 
-F-Droid signs with its own key, so there is no keystore in this repository and you do not need one for F-Droid. If you also
-want to publish your own signed APKs (for example on GitHub Releases), keep that keystore **out of the repository**, and note
-that the two signatures differ, so users cannot update from one source to the other without uninstalling first.
-[Reproducible builds](https://f-droid.org/docs/Reproducible_Builds/) would let F-Droid ship *your* signed APK; that needs a
-byte-identical build on their server and is worth trying later, not for the first submission.
+Free Print uses [reproducible builds](https://f-droid.org/docs/Reproducible_Builds/), so F-Droid publishes *this project's*
+signed APK and people can update between GitHub and F-Droid without reinstalling. The metadata has a `Binaries:` URL (the
+GitHub release APK) and `AllowedAPKSigningKeys:` (the release certificate's SHA-256). F-Droid builds the tag itself, copies
+the signature from the GitHub APK onto its build and publishes it only if the result verifies.
+
+What makes that work, and must stay so:
+
+- The release APK is signed with v2 and v3 only, with `--alignment-preserved` (see `tools/release.sh`); `release.sh` runs
+  `apksigcopier compare` against the unsigned build and refuses to publish if they differ.
+- Native code builds with `-ffile-prefix-map` and `--build-id=none`; AGP's `vcsInfo` is off.
+- GitHub releases are immutable: a bad APK cannot be replaced, only superseded by a new version (2.0.4 is such a case).
+- The keystore lives outside the repository (`~/.freeprint-release/`) and is never committed.
 
 ## Things that commonly delay a submission
 
