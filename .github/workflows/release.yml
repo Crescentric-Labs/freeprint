@@ -97,9 +97,9 @@ jobs:
             printf 'SHA-256: `%s`\n\nFull history: [CHANGELOG.md](https://github.com/%s/blob/main/CHANGELOG.md)\n' "$sha" "$GITHUB_REPOSITORY"
           } > "$RUNNER_TEMP/body.md"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release edit "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" "${flags[@]}"
+            gh release edit "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" ${flags[@]+"${flags[@]}"}
             gh release upload "$TAG" --clobber "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
           else
-            gh release create "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" "${flags[@]}" \
+            gh release create "$TAG" --title "Free Print $VERSION" --notes-file "$RUNNER_TEMP/body.md" ${flags[@]+"${flags[@]}"} \
               "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
           fi
