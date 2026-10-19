@@ -7,7 +7,7 @@
 **Print and scan from your phone over a USB cable.**<br>
 No drivers. No internet. No ads. No account. Free software.
 
-[![Download the latest APK](https://img.shields.io/github/v/release/Crescentric-Labs/freeprint?style=for-the-badge&logo=android&logoColor=white&label=Download%20APK&color=3DDC84)](https://github.com/Crescentric-Labs/freeprint/releases/latest)
+[![Download the latest APK](https://img.shields.io/github/v/release/Crescentric-Labs/freeprint?style=for-the-badge&logo=android&logoColor=white&label=Download%20APK&color=3DDC84)](https://github.com/Crescentric-Labs/freeprint/releases/download/v2.0.5/FreePrint-2.0.5.apk)
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.5-brightgreen.svg)](CHANGELOG.md)
@@ -15,7 +15,7 @@ No drivers. No internet. No ads. No account. Free software.
 [![arm64](https://img.shields.io/badge/ABI-arm64--v8a-lightgrey.svg)](#requirements)
 [![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-7F52FF.svg)](#how-it-works)
-[![Get it on F-Droid](https://img.shields.io/badge/F--Droid-submission%20planned-orange.svg)](docs/fdroid.md)
+[![Get it on F-Droid](https://img.shields.io/badge/F--Droid-submitted-orange.svg)](docs/fdroid.md)
 [![CI](https://github.com/Crescentric-Labs/freeprint/actions/workflows/ci.yml/badge.svg)](https://github.com/Crescentric-Labs/freeprint/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Crescentric-Labs/freeprint?label=release)](https://github.com/Crescentric-Labs/freeprint/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Crescentric-Labs/freeprint/total)](https://github.com/Crescentric-Labs/freeprint/releases)
