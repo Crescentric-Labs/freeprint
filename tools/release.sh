@@ -52,8 +52,9 @@ apk="$out/FreePrint-$version.apk"
 KEYSTORE_PASSWORD="$KEYSTORE_PASSWORD" KEY_PASSWORD="$KEY_PASSWORD" "$bt/apksigner" sign \
   --ks "$KEYSTORE" --ks-key-alias "$KEY_ALIAS" --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
   --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false \
-  --out "$apk" "$work/aligned.apk"
-# Only the v2 and v3 signature blocks, no META-INF signature files: a rebuild (F-Droid's) must match the unsigned build exactly
+  --alignment-preserved --out "$apk" "$work/aligned.apk"
+# Only the v2 and v3 signature blocks, no META-INF signature files, and the zip layout left as the build made it (--alignment-preserved,
+# otherwise apksigner pads entries): a rebuild, such as F-Droid's, must match the unsigned build exactly
 if unzip -l "$apk" | grep -q 'META-INF/.*\.\(SF\|RSA\)'; then echo "the APK carries v1 signature files"; exit 1; fi
 "$bt/apksigner" verify --print-certs "$apk" | sed -n '1,3p'
 ( cd "$out" && shasum -a 256 "FreePrint-$version.apk" > "FreePrint-$version.apk.sha256" )
