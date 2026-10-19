@@ -79,10 +79,10 @@ flags=(); case "$version" in 0.*) flags+=(--prerelease);; esac
 git -C "$root" ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1 || { echo "==> pushing tag $tag"; git -C "$root" push -q origin "$tag"; }
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   echo "==> updating release $tag"
-  gh release edit "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" "${flags[@]}"
+  gh release edit "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" ${flags[@]+"${flags[@]}"}
   gh release upload "$tag" --repo "$repo" --clobber "$apk" "$apk.sha256"
 else
   echo "==> creating release $tag"
-  gh release create "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" "${flags[@]}" "$apk" "$apk.sha256"
+  gh release create "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" ${flags[@]+"${flags[@]}"} "$apk" "$apk.sha256"
 fi
 echo "==> done: https://github.com/$repo/releases/tag/$tag"
