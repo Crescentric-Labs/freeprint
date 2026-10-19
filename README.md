@@ -7,7 +7,7 @@
 **Print and scan from your phone over a USB cable.**<br>
 No drivers. No internet. No ads. No account. Free software.
 
-[![Download the latest APK](https://img.shields.io/github/v/release/Crescentric-Labs/freeprint?style=for-the-badge&logo=android&logoColor=white&label=Download%20APK&color=3DDC84)](https://github.com/Crescentric-Labs/freeprint/releases/download/v2.0.5/FreePrint-2.0.5.apk)
+<a href="https://github.com/Crescentric-Labs/freeprint/releases/download/v2.0.5/FreePrint-2.0.5.apk"><img src="https://img.shields.io/badge/Download%20APK-v2.0.5-1E5FD8?style=for-the-badge&logo=android&logoColor=white" height="64" alt="Download the latest APK (v2.0.5)" /></a>
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.5-brightgreen.svg)](CHANGELOG.md)
