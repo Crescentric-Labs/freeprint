@@ -1,0 +1,1 @@
+• Release APKs can be rebuilt from source and checked byte for byte
