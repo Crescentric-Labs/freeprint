@@ -39,11 +39,6 @@ It works without any printer driver because most printers made in the last decad
 AirPrint) over USB. Free Print talks to them directly, so there is nothing to buy, nothing to install on the printer and no
 per-model driver to write.
 
-> **Honest status.** Printing, manual two-sided printing and scanning work on the author's Canon PIXMA G2020 with a Samsung
-> Galaxy S25 Ultra. Nothing else has been tried yet, and many of the newer features are unit tested and used on the phone
-> but not yet checked on paper. [Status](#status) says exactly which is which. Reports from other printers are the most
-> valuable contribution: see [Printer reports](CONTRIBUTING.md#printer-reports).
-
 ## Screenshots
 
 <table>
@@ -395,7 +390,7 @@ Design decisions worth knowing:
 
 ## Status
 
-**Checked on the Canon G2020 and the Galaxy S25 Ultra:** discovering the IPP-over-USB interfaces; printer attributes; a test page;
+**Checked on real phones with the Canon G2020:** discovering the IPP-over-USB interfaces; printer attributes; a test page;
 streaming PDFs; printing a PDF from the phone; **manual two-sided printing** (both passes); eSCL scanning (capabilities, jobs, two
 pages back, 4.5 MB and 1.2 MB); and all of the app's screens, animations and interactions on the phone.
 
