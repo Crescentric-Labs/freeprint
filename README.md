@@ -8,7 +8,7 @@
 No drivers. No internet. No ads. No account. Free software.
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.2-brightgreen.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.3-brightgreen.svg)](CHANGELOG.md)
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84.svg)](#requirements)
 [![arm64](https://img.shields.io/badge/ABI-arm64--v8a-lightgrey.svg)](#requirements)
 [![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
@@ -194,26 +194,26 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | | |
 |---|---|
 | App ID | `crescentric.freeprint.otg` |
-| Version | 2.0.2 (versionCode 5); see the [changelog](CHANGELOG.md) |
+| Version | 2.0.3 (versionCode 6); see the [changelog](CHANGELOG.md) |
 | Licence | GPL-3.0 (libusb 1.0.30, LGPL-2.1+, bundled) |
 | Android | min 8.0 (API 26), target and compile 35 |
 | ABI | arm64-v8a only |
-| Release APK | **11.9 MiB** (12,496,421 bytes for 2.0.2, signed; no minification); the debug build is about 17.6 MiB |
+| Release APK | **11.9 MiB** (12,496,421 bytes for 2.0.3, signed; no minification); the debug build is about 17.6 MiB |
 | Native code | about 750 lines of C++ of our own, plus vendored libusb |
 | Permissions | **none** |
 | Dependencies | 8 libraries: AndroidX (core, activity, lifecycle, splash screen), Jetpack Compose (UI, Material 3, icons, via the Compose BOM) and kotlinx.coroutines. All Apache-2.0 |
 | Languages | English, Sinhala (274 strings and 8 plurals in each) |
 | Source | 38 Kotlin files (about 7.4k lines), 15 test classes (about 0.8k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
 | Tests | **126 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
-| History | 380+ commits, one file per commit; 5 releases, 5 tags |
+| History | 380+ commits, one file per commit; 5 releases, 6 tags |
 | Build | Gradle 8.10.2, AGP 8.7.3, Kotlin 2.0.21, JDK 17, NDK 27.2, CMake 3.22.1 |
 
 ## Releases and deployment
 
 | | |
 |---|---|
-| Latest release | **2.0.2** (versionCode 5), published 2026-10-19 (UTC) |
-| Releases so far | 5 (one pre-release), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
+| Latest release | **2.0.3** (versionCode 6), published 2026-10-19 (UTC) |
+| Releases so far | 6 (one pre-release), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
 | Every release has | a signed APK, a `.sha256` checksum file, and its section of the [changelog](CHANGELOG.md) as the release notes |
 | Distribution | GitHub Releases: **live**. F-Droid: **prepared, not yet submitted** ([docs/fdroid.md](docs/fdroid.md)). Google Play: not planned |
 | Signing | one release key, the same for every release. Certificate SHA-256: `9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f` |
@@ -222,10 +222,11 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Continuous integration | on every push and pull request: strings in step with the generator, 126 unit tests, a debug build and a release build, and a check that the changelog has an entry for the version. A full run takes about 10 minutes from a cold cache |
 | Local release build | about a minute (`./gradlew assembleRelease`) |
 | Store listing | F-Droid metadata ready in `fastlane/`: 1 language (en-US), title, short and full description, 2 version changelogs, icon and 8 screenshots |
-| Reproducible builds | not yet; F-Droid signs with its own key |
+| Reproducible builds | **yes** since 2.0.3: building the same source in two different folders gives a byte-identical APK, so F-Droid can rebuild a release and ship it with this project's signature |
 
 | Version | versionCode | Released | APK size | SHA-256 (start) | Notes |
 |---|:-:|---|--:|---|---|
+| [2.0.3](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.3) | 6 | 2026-10-19 | 11.9 MiB | `d8d1c85b3754…` | reproducible builds |
 | [2.0.2](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.2) | 5 | 2026-10-19 | 11.9 MiB | `32e7b13c8cb8…` | shared text files get their own name, source link moved |
 | [2.0.1](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.1) | 4 | 2026-10-19 | 11.9 MiB | `044649d2148e…` | share and open-with, text to PDF, new icon, in-app changelog |
 | [2.0.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.0) | 3 | 2026-10-19 | 12.1 MiB | `1a7ace8ed174…` | home screen and dock, copies, pause, optimize for print, scan saving |
