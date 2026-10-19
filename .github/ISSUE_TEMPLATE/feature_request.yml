@@ -1,0 +1,14 @@
+name: Feature request
+description: Suggest something the app could do
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to be able to do?
+      description: Describe the problem first; the solution can come after
+    validations: { required: true }
+  - type: textarea
+    id: alt
+    attributes:
+      label: Anything you do today instead?
