@@ -95,4 +95,7 @@ else
   echo "==> creating release $tag"
   gh release create "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" ${flags[@]+"${flags[@]}"} "$apk" "$apk.sha256"
 fi
+# point the README download button at this release (commit it afterwards)
+sed -i.bak -E "s#releases/download/v[0-9.]+/FreePrint-[0-9.]+\.apk#releases/download/$tag/FreePrint-$version.apk#; s#Download%20APK-v[0-9.]+-#Download%20APK-v$version-#; s#Download the latest APK \(v[0-9.]+\)#Download the latest APK (v$version)#" "$root/README.md" && rm -f "$root/README.md.bak"
+echo "==> README download button now points at $tag: commit README.md"
 echo "==> done: https://github.com/$repo/releases/tag/$tag"
