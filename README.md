@@ -1,239 +1,388 @@
+<div align="center">
+
+<img src="fastlane/metadata/android/en-US/images/icon.png" width="128" alt="Free Print icon" />
+
 # Free Print
 
-A free, open-source Android app that prints PDFs and images to a **USB printer over OTG**, and scans from the printer's
-glass, with no paywall, no account and no internet connection. It is also an Android **print service**, so other apps
-can print to the printer through the system print dialog.
+**Print and scan from your phone over a USB cable.**<br>
+No drivers. No internet. No ads. No account. Free software.
 
-> **Status: early.** Printing PDFs, manual two-sided printing and the scanner's protocol all work on a real phone and
-> printer. Several newer features are built and unit tested but not yet checked on hardware. See [Status](#status) for
-> exactly what has and has not been verified.
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.0.1-brightgreen.svg)](CHANGELOG.md)
+[![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84.svg)](#requirements)
+[![arm64](https://img.shields.io/badge/ABI-arm64--v8a-lightgrey.svg)](#requirements)
+[![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
+[![Kotlin](https://img.shields.io/badge/Kotlin-Compose-7F52FF.svg)](#how-it-works)
+[![Get it on F-Droid](https://img.shields.io/badge/F--Droid-submission%20planned-orange.svg)](docs/fdroid.md)
 
-## Why
+[Features](#features) ·
+[Screenshots](#screenshots) ·
+[Install](#install) ·
+[Using it](#using-it) ·
+[Developer setup](#developer-setup) ·
+[How it works](#how-it-works) ·
+[Changelog](CHANGELOG.md) ·
+[Contributing](CONTRIBUTING.md)
 
-Printing to a USB-only inkjet from a phone usually means a paid app or a vendor app tied to one brand. Many current
-printers, however, can be driven without any driver: they speak IPP (the protocol behind AirPrint) over USB. Free Print
-talks to them directly, so there is nothing to buy and no per-model driver to write.
+</div>
 
-The app declares no permissions, in particular not `INTERNET`. Documents never leave the phone.
+---
+
+Free Print prints PDFs, pictures and text to a **USB printer plugged into your phone with an OTG adapter**, and scans from
+the printer's glass over the same cable. It is also an Android **print service**, so every other app can print to the
+printer from Android's own print dialog.
+
+It works without any printer driver because most printers made in the last decade can speak **IPP** (the protocol behind
+AirPrint) over USB. Free Print talks to them directly, so there is nothing to buy, nothing to install on the printer and no
+per-model driver to write.
+
+> **Honest status.** Printing, manual two-sided printing and scanning work on the author's Canon PIXMA G2020 with a Samsung
+> Galaxy S25 Ultra. Nothing else has been tried yet, and many of the newer features are unit tested and used on the phone
+> but not yet checked on paper. [Status](#status) says exactly which is which. Reports from other printers are the most
+> valuable contribution: see [Printer reports](CONTRIBUTING.md#printer-reports).
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/01-print-home.png" width="220" alt="Print tab start screen"><br><sub><b>Print</b><br>the start screen and the dock</sub></td>
+    <td align="center"><img src="docs/screenshots/02-print-workspace.png" width="220" alt="A document loaded, with preview, page strip and settings"><br><sub><b>Preview and settings</b><br>live preview, page strip, tiles</sub></td>
+    <td align="center"><img src="docs/screenshots/03-print-bar.png" width="220" alt="The print bar with the settings in effect as pills"><br><sub><b>The print bar</b><br>sides to print, settings as pills</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/04-settings-dialog.png" width="220" alt="A settings popup"><br><sub><b>Every setting</b><br>one popup each</sub></td>
+    <td align="center"><img src="docs/screenshots/05-scan-home.png" width="220" alt="The Scan tab"><br><sub><b>Scan</b><br>over the same USB cable</sub></td>
+    <td align="center"><img src="docs/screenshots/06-about-changelog.png" width="220" alt="The About page with the changelog expanded"><br><sub><b>About</b><br>licences, changelog, diagnostics</sub></td>
+  </tr>
+</table>
+
+<sub>Screenshots are taken in an Android emulator, which has no USB host, so the printer card shows "No USB printer
+connected". Everything else is the real app. Light and dark themes both follow the phone.</sub>
 
 ## Features
 
-**Choosing what to print**
-- PDFs and images (JPEG, PNG, WebP and anything Android can decode), picked together, in any mix.
-- Several files at once; add more later, remove one, or reorder them.
-- Page selection: ranges such as `1-3, 5, 8-`, plus odd or even pages only. Page numbers run across all files.
-- Take a page out of the job with the **x** on its thumbnail, and bring everything back with **Restore**; the file itself is untouched.
+### Print
 
-**Layout** (every option updates a live preview)
-- Paper: A4, Letter, A5, Legal, 4 x 6 in.
-- Pages per sheet: 1 to 8, in a grid chosen to draw the pages as large as possible (3, 5 and 7 leave spare cells),
-  across-then-down or down-then-across order, optional hairline border around each page.
-- Orientation: automatic (follows the first page), portrait or landscape.
-- Page size: fit, fill (crop) or actual physical size; scale 10 to 400 %.
-- Position: a 3 x 3 anchor plus millimetre offsets. Margins: automatic, none, or 0 to 50 mm.
-- Colour or grayscale; draft, normal or high quality.
-- **Two-sided printing without a duplexer** (see below): the front sides print, you turn the stack over, the back sides print.
+- **PDFs, pictures and text**, picked together in any mix, in one job. Add more files later, remove one, drag to reorder.
+- **Share to Free Print** or **Open with** from any app: PDFs, pictures and plain text (notes, messages, addresses, links).
+  Shared text is turned into a clean A4 PDF first.
+- **Live preview** drawn by the same code that prints, so it shows what will come out. A strip of sheet thumbnails, swiping
+  between sheets with a page-turn animation, and a full-screen viewer with pinch zoom (up to 8x), pan and double-tap zoom.
+- **Choose pages**: ranges like `1-3, 5, 8-`, odd or even only, or tap page-number pills. Take any sheet out with the **x** on
+  its thumbnail, and bring everything back with **Restore**. The file is never modified.
+- **Layout**: 1 to 8 pages per sheet (across or down, optional borders), portrait or landscape, fit / fill / actual size,
+  10 to 400 % scale, margins, 3 x 3 position with millimetre offsets.
+- **Paper**: A4, Letter, A5, A6, B5, Legal, Executive, 4 x 6, 5 x 7 and 8 x 10 in. Colour or grayscale, draft / normal / high.
+- **Copies**: up to 99, collated, also with two-sided printing.
+- **Two-sided printing without a duplexer**: the fronts print, an animated guide shows how to turn the stack, the backs print.
+  Long or short edge, reverse order, and a way to carry on to the backs if the fronts reported an error but printed anyway.
+- **Pause** a running job between sheets, and resume.
+- **Optimize for print** for photographed documents: whitens the paper, evens out shadows and uneven light, deepens the ink.
+  Per page, on pictures, PDF pages and scans, and always undoable.
+- **System print service**: choose the USB printer in the print dialog of Chrome, Files, Gallery or any other app.
 
-**Previewing**
-- Live sheet preview that uses the same layout code as the print job, so it shows what will print.
-- Strip of sheet thumbnails above the preview, with the active sheet highlighted and the original page numbers as labels.
-  Each has a delete button, and the strip only re-centres when you change page, not when you delete one.
-- Pages slide in from the right going forward and from the left going back, in the preview and in the viewer.
-- Full-screen viewer with pinch zoom (up to 8x), pan, double-tap zoom, swipe to change sheet and its own thumbnail strip.
-  It follows the light or dark theme.
+### Scan
 
-**Scanning** (flatbed, over the same USB link)
-- Scan pages from the printer's glass: whole glass, A4, Letter, A5, 5 x 7 or 4 x 6 in; resolutions the scanner offers
-  (typically 75 to 600 dpi); colour or grayscale.
-- One page per tap; scan more pages, then preview, reorder or delete them with the same thumbnail strip and viewer as the
-  print screen. Deleted pages can be restored until you clear all.
-- Save as a **PDF**, share it, or **print a copy** straight away (the pages open on the print screen).
-- The PDF embeds the scanner's JPEG untouched, so files stay small.
+- **Flatbed scanning over the USB cable** (eSCL, also called AirScan): area, resolution (as the scanner offers, typically
+  75 to 600 dpi) and colour or grayscale.
+- Scan several pages; preview, delete and restore them with the same strip and viewer as printing; optimize any page.
+- **Save as a PDF or as pictures**, either page by page as scanned or **laid out on paper sheets** with the print settings
+  (paper, orientation, pages per sheet, size and scale, margins, position, colour). Or **share** it, or **print a copy**.
+- Unmodified pages go into the PDF as the scanner's own JPEG, so files stay small.
 
-**System integration and polish**
-- Print service: pick the USB printer from the print dialog of any app (Chrome, Files, Gallery and so on).
-- The printer and scanner cards follow the cable: unplug the printer and the app notices at once, plug it in and it comes back.
-- English and Sinhala, with an in-app language switch; Android 13's per-app language setting lists both.
-- Diagnostics sheet: USB interface dump, IPP attribute query and a raw test page.
+### The app itself
+
+- **Private by construction**: no Android permissions at all, in particular no `INTERNET`. See [Privacy](#privacy).
+- **Material 3** with dynamic colour, light and dark, a floating dock to switch between Print and Scan, and swiping between them.
+- **English and Sinhala** (සිංහල), switchable inside the app or in Android's per-app language setting.
+- **Notices the cable**: plug the printer in and the app says so at once; unplug it and the card changes.
+- **Diagnostics** for printer makers and curious people: USB interface dump, IPP attributes, a raw test page.
+- **Changelog inside the app**: About → Changelog.
+
+## Install
+
+| Source | Status |
+|---|---|
+| **F-Droid** | Submission planned; the project is prepared for it ([docs/fdroid.md](docs/fdroid.md)). Not listed yet |
+| **GitHub Releases** | Signed APKs will be attached to each tagged release |
+| **Build it yourself** | See [Developer setup](#developer-setup) |
+
+After installing, plug the printer into the phone with a USB OTG adapter and its normal USB cable, switch the printer on, and
+open the app. Android asks once whether Free Print may use the USB device; allow it (choose "Always" to skip the question later).
+
+### Requirements
+
+| | |
+|---|---|
+| Phone | Android 8.0 (API 26) or newer, **64-bit ARM** (arm64-v8a), with USB host (OTG) support |
+| Cable | A USB OTG adapter or cable, plus the printer's own USB cable |
+| Printer | One that exposes the **IPP-over-USB** interface (USB class 7, subclass 1, protocol 4) and accepts `image/pwg-raster` at 600 dpi. Most AirPrint-capable USB printers do |
+| Scanner | The printer's scanner must answer **eSCL** over that same interface (the G2020's does) |
+
+The app's **About → Diagnostics → Interfaces** button tells you whether your printer has the interface.
+
+### Printers known to work
+
+| Printer | Print | Duplex (manual) | Scan | Reported by |
+|---|:-:|:-:|:-:|---|
+| Canon PIXMA G2020 | ✅ | ✅ | ✅ | the author |
+| *your printer here* | | | | [send a printer report](../../issues/new?template=printer-report.yml) |
+
+## Using it
+
+**Print.** Open the app, tap **Select documents or images** (or share a file to Free Print from another app). Check the
+preview, change anything in the settings tiles (each opens a popup), and press **Print**. The bar at the bottom shows how many
+sides will come out and the settings in effect.
+
+**Two-sided.** Open *Two-sided printing* and choose the long or short edge. The button then reads *Print front sides*. When the
+dialog appears, turn the stack over as it shows and tap *Continue*. If the backs come out in the wrong order, switch on *Print
+the back sides in reverse order*. Neither choice adds a binding margin; use *Margins* for that.
+
+**Scan.** Switch to the **Scan** tab (tap it in the dock, or swipe), put the page face down on the glass, and tap **Start
+scan**. A page can take up to a minute at high resolution. Scan more pages, then **Save**, **Share** or **Print a copy**.
+In the save dialog, turn on *Lay out on paper* to put the pages on sheets with the print settings.
+
+**Print from other apps.** Turn the service on once under *Settings → Connected devices → Connection preferences → Printing*
+(the path varies by phone) and switch on **Free Print**. Then pick the printer in any app's print dialog. Paper size, colour mode
+and copies come from that dialog.
+
+**Back to the start.** Once something is open, a back arrow in front of the app icon resets the app (scanned pages ask first).
+
+### Troubleshooting
+
+| Problem | Try |
+|---|---|
+| "No USB printer connected" | Check the OTG adapter and cable, switch the printer on, tap the refresh icon. Run **Diagnostics → Interfaces** and look for class 7 / subclass 1 / protocol 4 |
+| The permission dialog never appears | Unplug and re-plug the printer; check no other app (a vendor print app) has claimed it |
+| Printer detected, nothing prints | Run **IPP attributes** and check `image/pwg-raster` is in `document-format-supported`; load A4 paper; send a [printer report](CONTRIBUTING.md#printer-reports) |
+| "The printer rejected the job" after a long job | Update to 2.0.0 or newer (the wait for the printer's reply was too short before) |
+| Backs of a two-sided job come out in the wrong order | Turn on *Print the back sides in reverse order* |
+| The edge of the page is clipped | Add a small margin in *Margins*; the printer's own unprintable edge is not yet measured |
+| Scanning says it is not a scanner | Some printers expose no eSCL; send a printer report |
+| Print service missing from the system print dialog | Enable it under the phone's *Printing* settings |
+
+## Privacy
+
+- **No permissions.** The manifest declares none. The app cannot use the network, read your storage, or see your contacts.
+- **No tracking, no analytics, no ads, no accounts.** Nothing is sent anywhere, because the app has no way to send it.
+- **Your files stay on the phone.** They are read only when you pick them, share them to the app, or open them with it; temporary
+  copies (scanned pages, shared text turned into a PDF) live in the app's private cache.
+- **USB access is per device and per decision**, through Android's own permission dialog.
+- You can check all of this: the code is here, and F-Droid builds it from source.
+
+Report security problems privately: see [SECURITY.md](SECURITY.md).
+
+## At a glance
+
+| | |
+|---|---|
+| App ID | `crescentric.freeprint.otg` |
+| Version | 2.0.1 (versionCode 4); see the [changelog](CHANGELOG.md) |
+| Licence | GPL-3.0 (libusb 1.0.30, LGPL-2.1+, bundled) |
+| Android | min 8.0 (API 26), target and compile 35 |
+| ABI | arm64-v8a only |
+| Release APK | about **11.9 MB** unsigned (`assembleRelease`, no minification); debug about 17.6 MB |
+| Native code | about 750 lines of C++ of our own, plus vendored libusb |
+| Permissions | **none** |
+| Dependencies | 8 libraries: AndroidX (core, activity, lifecycle, splash screen), Jetpack Compose (UI, Material 3, icons, via the Compose BOM) and kotlinx.coroutines. All Apache-2.0 |
+| Languages | English, Sinhala (275 strings and 8 plurals in each) |
+| Source | 38 Kotlin files (about 7.3k lines), 14 test classes (about 0.8k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
+| Tests | **119 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
+| History | 290+ commits, one file per commit |
+| Build | Gradle 8.10.2, AGP 8.7.3, Kotlin 2.0.21, JDK 17, NDK 27.2, CMake 3.22.1 |
+
+## Developer setup
+
+You need a computer with about 6 GB free for the SDK, NDK and Gradle caches. The steps are for macOS and Linux; on Windows use
+`gradlew.bat` and set the variables with `setx`, or use Android Studio, which does it for you.
+
+### 1. Install the tools
+
+| Tool | Version | Notes |
+|---|---|---|
+| JDK | **17** | Newer JDKs are too new for this Android Gradle Plugin. macOS: `brew install openjdk@17` |
+| Android SDK | platform **35**, build-tools **35.0.0** | via Android Studio or `sdkmanager` |
+| Android NDK | **27.2.12479018** (r27c) | side by side, via `sdkmanager "ndk;27.2.12479018"` |
+| CMake | **3.22.1** | `sdkmanager "cmake;3.22.1"` |
+| Gradle | 8.10.2 | not needed: the wrapper downloads it |
+| Python 3 | any recent | only for `tools/gen_strings.py` |
+
+With the command-line tools alone:
+
+```sh
+sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1"
+sdkmanager --licenses
+```
+
+### 2. Point the build at them
+
+```sh
+export JAVA_HOME=/path/to/jdk-17
+export ANDROID_HOME=/path/to/android-sdk            # or put sdk.dir=... in local.properties (git-ignored)
+export PATH="$ANDROID_HOME/platform-tools:$PATH"
+```
+
+### 3. Build, test, install
+
+```sh
+git clone https://github.com/ChethiyaNuwan/freeprint.git
+cd freeprint
+
+./gradlew testDebugUnitTest          # 119 unit tests, a few seconds
+./gradlew assembleDebug              # app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleRelease            # app/build/outputs/apk/release/app-release-unsigned.apk (what F-Droid builds)
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The first build downloads Gradle and dependencies and compiles libusb; expect a few minutes. Opening the folder in Android Studio
+(Ladybug or newer) also works.
+
+### 4. Run it
+
+**On a phone.** The phone's only USB-C port is needed for the printer, so use **wireless debugging**:
+Developer options → Wireless debugging → Pair device with pairing code, then
+
+```sh
+adb pair <ip>:<pairing-port>          # enter the six-digit code
+adb connect <ip>:<connect-port>       # the port shown on the Wireless debugging screen
+adb logcat FreePrintNative:I AndroidRuntime:E '*:S'
+```
+
+**In an emulator (AVD).** Useful for everything except talking to a printer, because Android emulators have no USB host. Use an
+**arm64** image (the app ships arm64 libraries only), which runs natively on Apple Silicon and Arm machines:
+
+```sh
+sdkmanager "emulator" "system-images;android-35;google_apis;arm64-v8a"
+avdmanager create avd -n freeprint -k "system-images;android-35;google_apis;arm64-v8a" -d pixel_8
+$ANDROID_HOME/emulator/emulator -avd freeprint
+```
+
+On an x86-64 PC the arm64 app will not run in an x86 image; use a physical phone there. Shares and "open with" can be tried in
+the emulator (`adb shell am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT hello ...`).
+
+### 5. Everyday tasks
+
+| Task | How |
+|---|---|
+| Run the tests | `./gradlew testDebugUnitTest` (reports in `app/build/reports/tests/`) |
+| Change or add text | Edit the table in `tools/gen_strings.py`, run `python3 -I tools/gen_strings.py`. **Never** edit `res/values*/strings.xml` by hand |
+| Test the PWG raster encoder on the host | `tools/pwg-test` (compiles `gen.cpp` with sanitizers, checks output with `check.py`) |
+| Drive a printer from a Mac without Android | `tools/mac-spike/README.md` |
+| Read logs from native code | `adb logcat FreePrintNative:I AndroidRuntime:E '*:S'` |
+| Check the print service | `adb shell dumpsys print` |
+| Update the changelog | Add a line under `## [Unreleased]` in `CHANGELOG.md`; the app shows that file |
+| Cut a release | [docs/fdroid.md](docs/fdroid.md#releasing-a-new-version) |
+
+More detail: [docs/dev-setup.md](docs/dev-setup.md), [docs/findings.md](docs/findings.md) (what was learned about the printer and
+the protocols) and [docs/process.md](docs/process.md) (the dead ends, so you do not repeat them).
+
+### Project layout
+
+```
+app/                       the Android app
+  src/main/java/...          UI (Compose), view models, print pipeline, scanner, print service
+  src/main/cpp/              PWG raster encoder, IPP-over-USB sessions (JNI), vendored libusb 1.0.30
+  src/test/                  JVM unit tests
+fastlane/metadata/         F-Droid store texts, changelogs, icon and screenshots
+docs/                      findings, process log, dev setup, F-Droid guide, screenshots
+tools/                     string generator, PWG host test, Mac protocol spike
+.github/                   issue and pull request templates
+CHANGELOG.md               release notes (also shown in the app)
+LICENSE                    GNU GPL v3
+```
 
 ## How it works
 
-The G2020 and many other printers expose a second USB interface that carries IPP: class 7, subclass 1, **protocol 4**
-(IPP-over-USB). Free Print claims that interface and speaks plain HTTP/IPP over its bulk endpoints, sending the page as
-**PWG raster** at 600 dpi.
+Many printers expose a second USB interface carrying IPP: class 7, subclass 1, **protocol 4**. Free Print claims that interface
+and speaks plain HTTP and IPP over its bulk endpoints, sending each page as **PWG raster** at 600 dpi. The same interface also
+answers **eSCL** requests, which is how scanning works.
 
 ```mermaid
 flowchart LR
-    A["PDFs and images"] --> B["PageSource<br/>PdfRenderer, ImageDecoder"]
+    A["PDFs, pictures, text"] --> B["PageSource<br/>PdfRenderer, ImageDecoder"]
     B --> C["CompositeSource<br/>SelectedPages"]
     C --> D["SheetComposer<br/>grid, margins, scale, position"]
     D -->|"256-row bands"| E["PWG raster encoder<br/>(C++)"]
     E -->|"chunked HTTP, IPP Print-Job"| F["PrintSession<br/>(C++, libusb)"]
     F -->|"USB bulk"| G[("Printer")]
+    G -.->|"eSCL scan over the same link"| H["HttpSession (C++)"]
+    H --> I["JPEG pages, PDF writer"]
 ```
 
-1. **Open.** Each file becomes a `PageSource` (`PdfRenderer` for PDFs; `ImageDecoder` for images, decoded on demand at
-   just the resolution needed). `CompositeSource` joins them into one run of pages; `SelectedPages` applies the page range.
-2. **Lay out.** `SheetComposer` places pages on sheets: it picks the grid (`SheetGrid`), applies margins, and uses
-   `PageLayout` for fit, scale, anchor, offsets and rotation. It can render any horizontal strip of a sheet.
-3. **Stream.** `JobRunner` asks for one 256-row band at a time (about 5 MB), so a full A4 page at 600 dpi (about
-   100 MB uncompressed) is never in memory. The native encoder compresses each band to PWG raster and the session sends
-   it as an HTTP chunked body, because the total length is not known up front.
+1. **Open.** Each file becomes a `PageSource` (`PdfRenderer` for PDFs, `ImageDecoder` for pictures decoded on demand at just
+   the resolution needed). `CompositeSource` joins them into one run of pages; `SelectedPages` applies the page range.
+2. **Lay out.** `SheetComposer` places pages on sheets: it picks the grid, applies margins, and uses `PageLayout` for fit, scale,
+   anchor, offsets and rotation. It can render any horizontal strip of a sheet.
+3. **Stream.** `JobRunner` asks for one 256-row band at a time (about 5 MB), so a full A4 page at 600 dpi (about 100 MB
+   uncompressed) is never in memory. The native encoder compresses each band and the session sends it as an HTTP chunked body.
 4. **Talk USB.** Android's `UsbManager` grants permission and hands over a file descriptor; libusb wraps it
-   (`libusb_wrap_sys_device`), claims the IPP interface at its alternate setting and does bulk transfers.
-5. **Confirm.** The printer replies with an IPP status; anything other than successful-ok is reported as a failure.
+   (`libusb_wrap_sys_device`), claims the IPP interface and does bulk transfers.
+5. **Confirm.** The printer replies with an IPP status when it has taken the whole job, which for a long job can be minutes later;
+   anything other than successful-ok is reported as a failure.
 
-**Two-sided printing** for printers that cannot do it themselves splits the sheets into two passes (`DuplexPlan`): fronts
-are sheets 1, 3, 5... and backs are 2, 4, 6.... After the fronts a dialog with an illustration and an animated paper flip
-tells you to turn the stack over like a book page and load it the way you loaded blank paper, then **Continue** prints the
-backs. *Long edge* prints the backs upright; *short edge* turns every back 180 degrees so the sheet reads correctly when
-flipped like a notepad (done while streaming, so no whole page is held in memory). An option prints the backs last-to-first
-for printers whose paper stacks the other way round, and an odd number of sides is handled with a note about the last sheet.
+Design decisions worth knowing:
 
-**Scanning** uses the same USB interface. The printer also answers **eSCL** (the AirScan protocol) over HTTP there, so the
-app asks `GET /eSCL/ScannerCapabilities`, starts a job with `POST /eSCL/ScanJobs`, waits on
-`GET <job>/NextDocument` for the JPEG, and deletes the job. `HttpSession` (C++) is the small HTTP client that carries
-these requests; `EsclClient` and `ScanViewModel` drive it, and `JpegPdf` builds the PDF.
+- **Driverless over a driver library.** Gutenprint was tried first: the printer accepted its data and printed nothing. IPP worked
+  straight away. ([docs/findings.md](docs/findings.md))
+- **One layout path for preview and print.** Previews, thumbnails, saved scans and the print job all call `SheetComposer`, so they
+  cannot disagree. The pure maths has no Android types and is unit tested on the JVM.
+- **Units belong to the page.** A PDF page is in points and a photo in pixels, so "actual size" works in a mixed job.
+- **The printer feeds portrait.** A landscape sheet is laid out wide, turned a quarter turn into the raster, and turned back for the preview.
+- **No whole-page buffers.** Bands, lazy thumbnails and a shared decoded-image cache keep memory flat.
+- **Copies are made by the app**, not requested from the printer, so collation and two-sided pairing do not depend on the printer.
+- **Optimize for print** estimates the paper's brightness on a coarse grid, divides each pixel by it, then applies a levels curve;
+  for PDFs the estimate comes from a small render of the whole page, so no seams appear between print bands.
 
-### Architecture
-
-| Layer | Where | Responsibility |
-|---|---|---|
-| UI | `ui/PrintScreen.kt`, `ui/ScanScreen.kt`, `MainActivity.kt` | Jetpack Compose screens, popups, language dialog |
-| Shared UI | `ui/SharedUi.kt` | The pieces both screens use so they look and behave the same: page strip, zoomable viewer, setting rows, the page-flip transition |
-| State | `PrintViewModel.kt`, `scan/ScanViewModel.kt`, `UsbWatcher.kt` | Files, options, previews, thumbnails, restore points, job state; all slow work on `Dispatchers.IO`; USB plug and unplug events |
-| Layout and sources | `print/` | `PageSource`, `CompositeSource`, `PageSelection`, `PageLayout`, `SheetGrid`, `SheetComposer`, `Options`, `Duplex`, `ThumbRemap` |
-| Job running | `print/JobRunner.kt`, `JobExecutor.kt` | Streams bands, handles cancellation, checks the printer's reply |
-| USB and JNI | `UsbPrinter.kt`, `PrintSession.kt`, `NativeIpp.kt` | Find the printer, ask permission, call native code |
-| Native | `app/src/main/cpp/` | `pwg_encoder.h` (PWG raster), `ipp_usb.h` (IPP and interface helpers), `print_session.cpp` (streaming job), `ippusb.cpp` (one-shot diagnostics) |
-| Scanning | `scan/`, `HttpSession.kt`, `ui/ScanScreen.kt`, `cpp/http_session.cpp` | eSCL parsing and requests, the scan state, the JPEG-to-PDF writer, the scan screen, a generic HTTP/1.1 client over IPP-over-USB |
-| System print | `printservice/` | `UsbPrintService`, `UsbDiscoverySession`, `PrinterProfile` |
-| i18n | `AppLocale.kt`, `res/values*/`, `tools/gen_strings.py` | Language choice and generated string files |
-
-Decisions worth knowing:
-
-- **Driverless over a driver library.** Gutenprint was tried first and the printer accepted its data but printed nothing;
-  IPP worked straight away. See [docs/findings.md](docs/findings.md).
-- **One layout path for preview and print.** The preview, thumbnails and print job all call `SheetComposer`, so they cannot
-  disagree. The pure maths (`PageLayout.place`, `SheetGrid`, `PageSelection`) has no Android types and is unit tested on the JVM.
-- **Units belong to the page.** A PDF page is in points and a photo is in pixels, so units per inch are asked per page;
-  that is what lets "actual size" work in a mixed job.
-- **The printer feeds portrait.** A landscape sheet is laid out wide, then turned a quarter turn counter-clockwise into
-  the raster; the preview turns it back.
-- **No whole-page buffers.** Bands, lazy thumbnails (an 80-entry cache) and a single shared decoded-image cache keep memory flat.
-  Removing a page keeps the thumbnails that are still right and redraws only the rest (`ThumbRemap`).
-- **Deleting is reversible.** On the print screen it only edits the page selection, so restoring puts the old selection back; on
-  the scan screen deleted pages are kept aside (`PageTrash`) until you clear all.
-
-## Requirements
-
-- **Phone:** Android 8.0 (API 26) or newer, **arm64** (the native libraries are built for arm64-v8a only), USB host
-  support and a USB OTG adapter.
-- **Printer:** one that exposes IPP-over-USB (USB interface class 7, subclass 1, protocol 4) and accepts
-  `image/pwg-raster` at 600 dpi. Many recent AirPrint-capable printers do. The way to check is the **Interfaces** and
-  **IPP attributes** buttons in the app's diagnostics sheet.
-- **Tested on:** Canon PIXMA G2020 with a Samsung Galaxy S25 Ultra (Android 17). Nothing else has been tried.
-
-## Build
-
-You need JDK 17, the Android SDK (platform 35, build-tools 35.0.0), NDK 27.2.12479018 and CMake 3.22.1. The Gradle
-wrapper (8.10.2) does the rest.
-
-```sh
-export JAVA_HOME=/path/to/jdk17
-export ANDROID_HOME=/path/to/android-sdk     # or create local.properties with sdk.dir=...
-./gradlew assembleDebug                      # app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest                  # 105 JVM unit tests
-```
-
-The application ID is `crescentric.freeprint.otg`. Because the phone's only USB-C port is taken by the printer, install and
-read logs over wireless debugging.
-[docs/dev-setup.md](docs/dev-setup.md) covers the toolchain, wireless adb, enabling the print service and the string workflow.
-
-## Using it
-
-**In the app:** connect the printer through the OTG adapter, tap *Allow USB access*, choose files, adjust the settings
-(each opens a popup), check the preview and press **Print**.
-
-**Scanning:** on the start screen open **Scan a document**, put a page face down on the glass, choose area, resolution
-and colour, and tap **Scan page**. A page can take up to a minute at high resolution. Tap again for more pages, then
-**Print a copy**, **Save PDF** or **Share**.
-
-**Two-sided:** in the settings open *Two-sided printing* and choose the long or short edge. The button then reads *Print front
-sides*. When the dialog appears, follow its steps and tap *Continue*. If the backs come out in the wrong order, switch on
-*Print the back sides in reverse order*. Neither edge choice adds extra space for binding; use *Margins* for that.
-
-**From other apps:** enable *Free Print* under Settings, Connections, More connection settings, Printing (the path
-varies by phone). Then choose the printer in any app's print dialog. Paper size, colour mode and copies come from that
-dialog; copies are sent to the printer as an IPP attribute.
-
-## Languages
-
-English and Sinhala. All text lives in `values/strings.xml` and `values-si/strings.xml`, which are **generated** from one
-table so they cannot drift apart:
-
-```sh
-python3 -I tools/gen_strings.py     # edit the table in that file, then run it
-```
-
-The Sinhala wording has not been reviewed by a native speaker; corrections are very welcome.
-
-## Testing
-
-| What | How |
+| Layer | Where |
 |---|---|
-| Layout, grid, page ranges and their text form, margins, combined sources, two-sided passes, thumbnail and deleted-page bookkeeping, eSCL parsing and requests, the PDF writer, viewer colours | 105 JVM unit tests (`app/src/test`) |
-| PWG raster encoder | `tools/pwg-test`: encodes 108 tricky images with sanitizers and checks them pixel for pixel with an independent Python decoder |
-| USB and IPP protocol | `tools/mac-spike`: small C programs and a PWG generator that drive the printer from a Mac with libusb |
-| Everything on real hardware | Manual, on the phone and printer above |
-
-## Repository layout
-
-```
-app/                    the Android app (Kotlin, Compose, JNI)
-  src/main/java/...      UI, view-model, print pipeline, print service, scanner
-  src/main/cpp/          PWG encoder, IPP-over-USB session, vendored libusb 1.0.30
-  src/test/              JVM unit tests
-docs/                   findings (printer and protocol), process log, dev setup
-tools/                  string generator, PWG encoder host test, Mac protocol spike
-LICENSE                 GNU GPL v3
-```
+| UI (Compose) | `ui/HomeScreen.kt`, `PrintScreen.kt`, `ScanScreen.kt`, `AboutScreen.kt`, `LayoutSettings.kt`, `SharedUi.kt` |
+| State | `PrintViewModel.kt`, `scan/ScanViewModel.kt`, `UsbWatcher.kt` |
+| Layout and sources | `print/` (`PageSource`, `CompositeSource`, `PageSelection`, `PageLayout`, `SheetGrid`, `SheetComposer`, `Duplex`, `DocEnhance`, `TextPdf`...) |
+| Job running | `print/JobRunner.kt`, `JobExecutor.kt` |
+| USB and JNI | `UsbPrinter.kt`, `PrintSession.kt`, `HttpSession.kt`, `NativeIpp.kt` |
+| Native | `app/src/main/cpp/` (`pwg_encoder.h`, `ipp_usb.h`, `print_session.cpp`, `http_session.cpp`, `ippusb.cpp`) |
+| Scanning | `scan/` (`Escl`, `EsclClient`, `JpegPdf`, `PageTrash`) |
+| System print | `printservice/` |
+| Languages | `AppLocale.kt`, `res/values*/`, `tools/gen_strings.py` |
 
 ## Status
 
-**Verified on the Canon G2020 and Galaxy S25 Ultra:** discovering the IPP-over-USB interfaces, Get-Printer-Attributes,
-printing a test page, streaming PDFs with chunked transfer (including a real PDF from the phone), and **manual two-sided
-printing** (both passes). For scanning, the capabilities and status requests are answered, scan jobs are accepted, and two
-pages came back over eSCL (4.5 MB and 1.2 MB JPEGs, confirmed in the device log).
+**Checked on the Canon G2020 and the Galaxy S25 Ultra:** discovering the IPP-over-USB interfaces; printer attributes; a test page;
+streaming PDFs; printing a PDF from the phone; **manual two-sided printing** (both passes); eSCL scanning (capabilities, jobs, two
+pages back, 4.5 MB and 1.2 MB); and all of the app's screens, animations and interactions on the phone.
 
-**Built and unit tested, but not yet checked on hardware:** how scanned pages look and what Print a copy, Save PDF and Share
-produce; the print service; landscape direction; mixed PDF and image jobs; the on-demand image decoding path; n-up layouts,
-scale, margins and position; grayscale; deleting and restoring pages; live printer detection; the flip animation; the viewer in
-light theme; the language switch.
+**Built and unit tested, used on the phone, but not yet checked on paper:** how scanned pages and saved scans look; the system
+print service; copies, pause, and the continue-after-failed-fronts option; optimize for print results; landscape and n-up layouts,
+margins and position; grayscale; the newer paper sizes (A6, B5, Executive, 5 x 7, 8 x 10 are listed from the standard names, and the
+G2020 may not take every one); shared text and files from other apps; Sinhala wording.
 
-**Not measured:** how close to the paper edge the printer actually prints, so margins below a few millimetres may be clipped.
+**Not measured:** how close to the paper edge the printer actually prints.
 
-## Limitations and ideas
+## Limitations and roadmap
 
-- Manual two-sided printing assumes the printer picks the top sheet and puts paper out face up. Printers that behave differently
-  may need the reverse option. If the second pass fails, the job has to be started again, and there is no extra binding margin.
-- Scanning is flatbed only (the G2020 has no document feeder), one page per scan, and cannot be cancelled once started.
-- Only the 600 dpi PWG raster path exists. Printers that want PDF or URF only, or lack 600 dpi, are not supported yet.
-- No job-status polling yet: the app reports whether the printer accepted the job, not whether the page came out.
-- A job cancelled mid-stream leaves the printer waiting for the rest of the page; a power cycle may be needed.
-- Capabilities (paper sizes, colour) are hard-coded for now rather than read from the printer.
-- Possible additions: reading capabilities from IPP, job status and ink levels, URF output, and fallbacks (a PCL encoder, or
-  Gutenprint) for printers that do not speak IPP over USB.
+- Manual two-sided printing assumes the printer takes the top sheet and delivers face up. If the second pass fails, start again.
+- Scanning is flatbed only, one page per scan, and cannot be cancelled once started.
+- Only the 600 dpi PWG raster path exists. Printers that want only PDF or URF, or lack 600 dpi, are not supported yet.
+- No job-status polling: the app knows the printer accepted the job, not that the page came out.
+- A job stopped mid-stream leaves the printer waiting for the rest of the page; a power cycle may be needed.
+- Capabilities (paper, colour) are fixed lists, not read from the printer.
+- **Not planned:** web pages. Fetching a page needs the internet permission, which the app deliberately does not have. Print a page
+  from the browser's own menu instead; that goes through the print service and works offline.
+- **Ideas:** read capabilities from IPP, job status and ink levels, URF output, a PCL fallback for printers without IPP-over-USB,
+  more languages, a themed launcher icon.
 
 ## Contributing
 
-Reports from other printers are the most useful contribution. Run **Interfaces** and **IPP attributes** from the
-diagnostics sheet and open an issue with the output and what happened when you printed the test page. Code changes should
-keep `./gradlew testDebugUnitTest` green; the pure layout maths is the easiest place to start.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md). The short version: **printer reports** are the most useful thing, then bug reports,
+translations, and small focused pull requests. Please keep `./gradlew testDebugUnitTest` green, put new text through
+`tools/gen_strings.py`, and keep the app free of permissions.
 
-## Licence
+## Acknowledgements and licence
 
-Free Print is licensed under the **GNU General Public License v3.0**; see [LICENSE](LICENSE).
+Free Print is free software under the **GNU General Public License v3.0**; see [LICENSE](LICENSE). The About screen shows the
+notice and the full texts.
 
-It bundles [libusb](https://libusb.info) 1.0.30 as source under `app/src/main/cpp/third_party/libusb/`, licensed under
-the LGPL 2.1 or later (its `COPYING` is alongside), which is compatible with distributing the combined app under GPL v3.
+It bundles [libusb](https://libusb.info) 1.0.30 as source under `app/src/main/cpp/third_party/libusb/`, licensed under the
+LGPL 2.1 or later (its `COPYING` is alongside), which is compatible with distributing the combined app under the GPL v3.
+
+Built with Kotlin, Jetpack Compose and Material 3. Developed by [Crescentric](https://github.com/ChethiyaNuwan).
