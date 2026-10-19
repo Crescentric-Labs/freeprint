@@ -9,6 +9,9 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+### Changed
+- The project now lives in the Crescentric-Labs organisation on GitHub, and the source link on the About screen points there.
+
 ## [2.0.1] - 2026-10-19
 
 ### Added
