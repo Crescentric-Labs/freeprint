@@ -74,6 +74,10 @@
     <string name="about_developed_by">Developed by Crescentric</string>
     <string name="about_tagline">Free, open-source USB printing and scanning for Android.</string>
     <string name="about_privacy">This app has no internet access and collects no data. Your documents stay on your phone.</string>
+    <string name="about_changelog_title">Changelog</string>
+    <string name="about_changelog_latest">Latest: %1$s %2$s</string>
+    <string name="cd_expand">Expand</string>
+    <string name="cd_collapse">Collapse</string>
     <string name="about_license_title">Licence</string>
     <string name="about_license_notice">Free Print is free software, licensed under the GNU General Public License version 3. It comes with ABSOLUTELY NO WARRANTY, and you are welcome to redistribute it under the conditions of that licence.</string>
     <string name="about_view_license">View licence text</string>
