@@ -51,6 +51,27 @@ The phone has one USB-C port and the printer needs it, so install and read logs 
 Verified working on a Galaxy S25 Ultra (Android 17). What to look for: Scan should list IF 2 and IF 3 with `alt 1 class 7 sub 1 proto 4`. If Attributes
 logs `libusb_wrap_sys_device` or `claim` errors, record the exact error name in `findings.md`.
 
+## Emulator (AVD) on Apple Silicon
+
+An emulator cannot talk to a printer (there is no USB host), but it is the quickest way to look at every screen, to take
+screenshots for the README and the F-Droid listing without private notifications in them, and to try shares and "open with".
+The app ships **arm64** libraries only, so use an arm64 system image:
+
+```
+sdkmanager "emulator" "system-images;android-35;google_apis;arm64-v8a"
+avdmanager create avd -n freeprint -k "system-images;android-35;google_apis;arm64-v8a" -d pixel_8
+$ANDROID_HOME/emulator/emulator -avd freeprint -no-snapshot -netdelay none -netspeed full &
+adb wait-for-device
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+Handy while testing there:
+
+- Dark or light theme: `adb shell cmd uimode night yes` / `no`.
+- Share some text to the app: `adb shell "am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT 'Hello' -n crescentric.freeprint.otg/.MainActivity"`.
+- Put a file where the app can open it: push it to `/sdcard/Download/`, then `adb shell am start -a android.intent.action.VIEW -d <content uri> -t application/pdf --grant-read-uri-permission -n crescentric.freeprint.otg/.MainActivity`.
+- Screenshot: `adb exec-out screencap -p > shot.png`.
+
 ## Mac-side tools
 
 `tools/mac-spike/` holds the C programs and the PWG generator used before the Android work
