@@ -64,8 +64,6 @@ PATH="$bt:$PATH" apksigcopier compare "$apk" --unsigned "$unsigned" >/dev/null 2
 echo "==> signature matches the unsigned build (reproducible-build check passed)"
 "$bt/apksigner" verify --print-certs "$apk" | sed -n '1,3p'
 ( cd "$out" && shasum -a 256 "FreePrint-$version.apk" > "FreePrint-$version.apk.sha256" )
-# the same file under a fixed name, so releases/latest/download/FreePrint.apk always works (the README button uses it)
-latest_apk="$out/FreePrint.apk"; cp "$apk" "$latest_apk"
 sha="$(cut -d' ' -f1 "$out/FreePrint-$version.apk.sha256")"
 size="$(du -h "$apk" | cut -f1 | tr -d " ")"
 
@@ -92,9 +90,9 @@ git -C "$root" ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
   echo "==> updating release $tag"
   gh release edit "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" ${flags[@]+"${flags[@]}"}
-  gh release upload "$tag" --repo "$repo" --clobber "$apk" "$apk.sha256" "$latest_apk"
+  gh release upload "$tag" --repo "$repo" --clobber "$apk" "$apk.sha256"
 else
   echo "==> creating release $tag"
-  gh release create "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" ${flags[@]+"${flags[@]}"} "$apk" "$apk.sha256" "$latest_apk"
+  gh release create "$tag" --repo "$repo" --title "Free Print $version" --notes-file "$notes" ${flags[@]+"${flags[@]}"} "$apk" "$apk.sha256"
 fi
 echo "==> done: https://github.com/$repo/releases/tag/$tag"
