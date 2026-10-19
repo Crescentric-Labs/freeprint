@@ -25,7 +25,7 @@ uploaded: the work is making sure the source builds cleanly and describing the a
    `docs/fdroid.md` is right.
 2. **Run a clean release build** on a machine that has nothing else set up:
    ```sh
-   git clone https://github.com/ChethiyaNuwan/freeprint.git && cd freeprint
+   git clone https://github.com/Crescentric-Labs/freeprint.git && cd freeprint
    ./gradlew clean assembleRelease
    ```
    The unsigned APK is at `app/build/outputs/apk/release/app-release-unsigned.apk`.
@@ -44,15 +44,15 @@ Categories:
   - System
 License: GPL-3.0-only
 AuthorName: Crescentric
-WebSite: https://github.com/ChethiyaNuwan/freeprint
-SourceCode: https://github.com/ChethiyaNuwan/freeprint
-IssueTracker: https://github.com/ChethiyaNuwan/freeprint/issues
-Changelog: https://github.com/ChethiyaNuwan/freeprint/blob/HEAD/CHANGELOG.md
+WebSite: https://github.com/Crescentric-Labs/freeprint
+SourceCode: https://github.com/Crescentric-Labs/freeprint
+IssueTracker: https://github.com/Crescentric-Labs/freeprint/issues
+Changelog: https://github.com/Crescentric-Labs/freeprint/blob/HEAD/CHANGELOG.md
 
 AutoName: Free Print
 
 RepoType: git
-Repo: https://github.com/ChethiyaNuwan/freeprint.git
+Repo: https://github.com/Crescentric-Labs/freeprint.git
 
 Builds:
   - versionName: 2.0.1
