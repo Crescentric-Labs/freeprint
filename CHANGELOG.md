@@ -66,7 +66,7 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [0.1.0] - 2026-10-11
 
-First working version.
+First working version. Its application ID was `crystaldigits.freeprint.otg`; from 1.0.0 it is `crescentric.freeprint.otg`, so this build and later ones install side by side rather than as updates of each other.
 
 ### Added
 - Driverless printing to a USB printer: IPP over USB with PWG raster, through a bundled libusb. Tested on a Canon PIXMA G2020 with a Samsung Galaxy S25 Ultra.
