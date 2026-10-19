@@ -1,0 +1,7 @@
+• New home screen with a floating dock for Print and Scan
+• Copies, pause, drag to reorder files
+• Optimize for print, per page, for pictures, PDFs and scans
+• Save scans as PDF or pictures, laid out on paper if you like
+• Settings as tiles, more paper sizes, page-number pills
+• Splash screen
+• Fixed "printer rejected the job" after long jobs that printed fine
