@@ -12,11 +12,12 @@ AutoName: Free Print
 
 RepoType: git
 Repo: https://github.com/Crescentric-Labs/freeprint.git
+Binaries: https://github.com/Crescentric-Labs/freeprint/releases/download/v%v/FreePrint-%v.apk
 
 Builds:
-  - versionName: 2.0.3
-    versionCode: 6
-    commit: v2.0.3
+  - versionName: 2.0.5
+    versionCode: 8
+    commit: 1f5d95f2b0f03c6b3c7dff95aaa0efe9227d2943
     subdir: app
     sudo:
       - apt-get update || apt-get update
@@ -26,7 +27,9 @@ Builds:
       - yes
     ndk: r27c
 
+AllowedAPKSigningKeys: 9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 2.0.3
-CurrentVersionCode: 6
+CurrentVersion: 2.0.5
+CurrentVersionCode: 8
