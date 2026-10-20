@@ -122,7 +122,7 @@ per-model driver to write.
 
 | Source | Status |
 |---|---|
-| **F-Droid** | Submission planned; the project is prepared for it ([docs/fdroid.md](docs/fdroid.md)). Not listed yet |
+| **F-Droid** | Submitted: the [inclusion merge request](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/53306) is open and under review ([docs/fdroid.md](docs/fdroid.md)). Not listed yet |
 | **GitHub Releases** | Signed APKs will be attached to each tagged release |
 | **Build it yourself** | See [Developer setup](#developer-setup) |
 
@@ -237,7 +237,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | [1.0.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v1.0.0) | 1 | 2026-10-19 | 11.9 MiB | `c8ee66738cf8…` | About screen, licences |
 | [0.1.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v0.1.0) | 1 | 2026-10-19 | 11.9 MiB | `2b1683c710f2…` | first working version (pre-release, other app ID) |
 
-<sub>The version dates are when each release was published on GitHub (UTC, so a late-evening release can show the day before the changelog's local date); the changelog gives the dates the work was done (all between 2026-10-11 and 2026-10-19). Download counts are on the release pages and in the badge above; they are not copied here so they cannot go stale. The badges work once the repository is public.</sub>
+<sub>The version dates are when each release was published on GitHub (UTC, so a late-evening release can show the day before the changelog's local date); the changelog gives the dates the work was done (all between 2026-10-11 and 2026-10-19). Download counts are on the release pages and in the badge above; they are not copied here so they cannot go stale.</sub>
 
 ## Developer setup
 
