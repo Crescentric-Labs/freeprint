@@ -85,6 +85,18 @@ tests the tag but publishes nothing, and says so in the run. You can also run it
 Only tags from before the workflow existed (`v0.1.0`, `v1.0.0`, `v2.0.0`) cannot trigger it, because the workflow file is not in
 them; they were published with `tools/release.sh`.
 
+## Branches and betas
+
+- `main` is what has been released. `develop` is where finished features meet before a release. Work happens on
+  `feature/<name>` branches, which are merged into `develop`.
+- Every push to `develop` runs the **Beta** workflow (`.github/workflows/beta.yml`): tests, a release build and, if
+  `versionName` is a beta such as `2.1.0-beta.1` that has not been published yet, a signed APK published as a GitHub
+  **pre-release** tagged `beta-2.1.0-beta.1`. Betas are never "latest", so the normal download button is not affected.
+- To publish another beta: raise the beta number in `app/build.gradle.kts`, add a `## [2.1.0-beta.2] - date` section to
+  `CHANGELOG.md`, merge into `develop`. Published releases cannot be changed, so a new beta always needs a new number.
+- To ship: on `develop` set the plain version (`2.1.0`), move the changelog entries under it, merge `develop` into `main`, then
+  tag `v2.1.0` as usual.
+
 ## When something goes wrong
 
 | Symptom | Cause and fix |
