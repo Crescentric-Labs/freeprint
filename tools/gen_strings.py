@@ -29,6 +29,7 @@ S = {
  "grant_permission": ("Allow USB access", "USB ප්‍රවේශයට ඉඩ දෙන්න"),
  "ready": ("Ready", "සූදානම්"),
  "printer_mode": ("USB OTG • Driverless IPP (600 DPI)", "USB OTG • ධාවකයක් නොමැති IPP (600 DPI)"),
+ "printer_mode_spl": ("USB OTG • Samsung SPL, black and white (beta)", "USB OTG • Samsung SPL, black and white (beta)"),
 
  "hero_title": ("Ready to print", "මුද්‍රණයට සූදානම්"),
  "hero_body": ("Select any PDF or image to configure options and print directly to your USB printer.", "ඕනෑම PDF හෝ රූපයක් තෝරා විකල්ප සකසා ඔබේ USB මුද්‍රණ යන්ත්‍රයෙන් සෘජුවම මුද්‍රණය කරන්න."),
