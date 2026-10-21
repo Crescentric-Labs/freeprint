@@ -1,0 +1,108 @@
+name: Beta
+
+# Every push to develop is built and tested. When the version in app/build.gradle.kts is a beta (for example 2.1.0-beta.1) and
+# that beta has not been published yet, the APK is signed with the release key and published as a GitHub pre-release tagged
+# beta-<version>. Betas are never "latest", so the normal download button and F-Droid are not affected. To publish a new beta,
+# raise the beta number (and versionCode if needed) and add a matching "## [2.1.0-beta.2]" section to CHANGELOG.md.
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: beta-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  beta:
+    name: Build, test and publish the beta
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Which version is this?
+        id: version
+        run: |
+          version="$(sed -n 's/.*versionName = "\(.*\)"/\1/p' app/build.gradle.kts)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "TAG=beta-$version" >> "$GITHUB_ENV"
+          case "$version" in
+            *-beta.*) echo "beta=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "beta=false" >> "$GITHUB_OUTPUT"; echo "::notice::versionName $version is not a beta, so nothing will be published." ;;
+          esac
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install the NDK and CMake
+        run: |
+          set +o pipefail
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          set -o pipefail
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0" "ndk;27.2.12479018" "cmake;3.22.1" > /dev/null
+
+      - name: The two string files are in step with the generator
+        run: |
+          python3 -I tools/gen_strings.py
+          git diff --exit-code -- app/src/main/res/values/strings.xml app/src/main/res/values-si/strings.xml
+
+      - name: Test and build
+        run: ./gradlew testDebugUnitTest assembleRelease --console=plain
+
+      - name: Is there something new to publish?
+        id: publish
+        run: |
+          if [ "${{ steps.version.outputs.beta }}" != "true" ]; then echo "go=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::notice::$TAG is already published (releases cannot be changed). Raise the beta number to publish a new one."
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::warning::No signing secrets, so nothing was published."
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          .github/scripts/release-notes.sh "$VERSION" > "$RUNNER_TEMP/notes.md"
+          echo "go=true" >> "$GITHUB_OUTPUT"
+
+      - name: Sign
+        if: steps.publish.outputs.go == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          bt="$ANDROID_HOME/build-tools/35.0.0"
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          "$bt/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/aligned.apk"
+          "$bt/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
+            --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true --v4-signing-enabled false --alignment-preserved --out "FreePrint-$VERSION.apk" "$RUNNER_TEMP/aligned.apk"
+          "$bt/apksigner" verify --print-certs "FreePrint-$VERSION.apk"
+          sha256sum "FreePrint-$VERSION.apk" > "FreePrint-$VERSION.apk.sha256"
+          rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: Publish the pre-release
+        if: steps.publish.outputs.go == 'true'
+        run: |
+          sha="$(cut -d' ' -f1 "FreePrint-$VERSION.apk.sha256")"
+          {
+            printf '**This is a beta.** It is for testing and may print wrongly or not at all. Please report what you see on the [issue tracker](https://github.com/%s/issues).\n\n' "$GITHUB_REPOSITORY"
+            cat "$RUNNER_TEMP/notes.md"
+            printf '\n---\n\n**Install:** download `FreePrint-%s.apk` below and open it on an Android 8.0+ phone with a 64-bit ARM processor. It is signed with the normal release key, so it installs over the released app; going back to a release needs an uninstall first.\n\n' "$VERSION"
+            printf 'SHA-256: `%s`\n' "$sha"
+          } > "$RUNNER_TEMP/body.md"
+          gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "Free Print $VERSION (beta)" --notes-file "$RUNNER_TEMP/body.md" \
+            "FreePrint-$VERSION.apk" "FreePrint-$VERSION.apk.sha256"
