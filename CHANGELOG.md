@@ -9,6 +9,8 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+## [2.1.0-beta.1] - 2026-10-21
+
 ### Added
 - Beta: printing to the Samsung ML-2160, a laser printer that cannot print without a driver. Free Print now speaks its own page language over USB, in black and white. Other printers of this kind may follow.
 
