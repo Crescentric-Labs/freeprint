@@ -1,19 +1,18 @@
 name: Beta
 
-# Every push to develop, and every pushed tag named beta-*, is built and tested. When the version in app/build.gradle.kts is a beta (for example 2.1.0-beta.1) and
-# that beta has not been published yet, the APK is signed with the release key and published as a GitHub pre-release tagged
-# beta-<version>. Betas are never "latest", so the normal download button and F-Droid are not affected. To publish a new beta,
-# raise the beta number (and versionCode if needed) and add a matching "## [2.1.0-beta.2]" section to CHANGELOG.md.
+# Pushing a tag named beta-<version> (for example beta-2.2.0-beta.2, on a commit of develop) builds and tests that commit and,
+# if the version in app/build.gradle.kts is that beta, signs the APK with the release key and publishes it as a GitHub
+# pre-release. Betas are never "latest", so the normal download button and F-Droid are not affected. Ordinary pushes to
+# develop are only checked by the CI workflow. It can also be started by hand from the Actions tab.
 on:
   push:
-    branches: [develop]
     tags: ["beta-*"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# One beta build at a time, so a branch push and a tag push of the same beta cannot both try to publish it
+# One beta build at a time, so two runs for the same beta cannot both try to publish it
 concurrency:
   group: beta
   cancel-in-progress: false
