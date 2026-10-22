@@ -1,11 +1,11 @@
 name: Release
 
-# Pushing a tag such as v2.0.1 builds that tag, signs the APK and publishes it as a GitHub release whose notes are the
+# Pushing a tag such as v2.0.1 (beta tags such as v2.2.0-beta.1 belong to the Beta workflow and are skipped here) builds that tag, signs the APK and publishes it as a GitHub release whose notes are the
 # matching CHANGELOG.md section. Signing needs four repository secrets (see docs/releasing.md); without them the build is still
 # checked but nothing is published, and the run says so.
 on:
   push:
-    tags: ["v*"]
+    tags: ["v*", "!v*-beta*"]
   workflow_dispatch:
     inputs:
       tag:
