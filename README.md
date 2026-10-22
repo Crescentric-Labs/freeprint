@@ -135,7 +135,7 @@ open the app. Android asks once whether Free Print may use the USB device; allow
 |---|---|
 | Phone | Android 8.0 (API 26) or newer, **64-bit ARM** (arm64-v8a), with USB host (OTG) support |
 | Cable | A USB OTG adapter or cable, plus the printer's own USB cable |
-| Printer | One that exposes the **IPP-over-USB** interface (USB class 7, subclass 1, protocol 4) and accepts `image/pwg-raster` at 600 dpi. Most AirPrint-capable USB printers do. The one exception is the **Samsung ML-2160**, which has no driverless mode: Free Print speaks its own page language, in black and white (tried on one printer so far) |
+| Printer | One that exposes the **IPP-over-USB** interface (USB class 7, subclass 1, protocol 4) and accepts `image/pwg-raster` at 600 dpi. Most AirPrint-capable USB printers do. The one exception is the **Samsung ML-2160**, which has no driverless mode: Free Print speaks its own page language, in black and white (a user confirmed it prints) |
 | Scanner | The printer's scanner must answer **eSCL** over that same interface (the G2020's does) |
 
 The app's **About → Diagnostics → Interfaces** button tells you whether your printer has the interface.
@@ -145,6 +145,7 @@ The app's **About → Diagnostics → Interfaces** button tells you whether your
 | Printer | Print | Duplex (manual) | Scan | Reported by |
 |---|:-:|:-:|:-:|---|
 | Canon PIXMA G2020 | ✅ | ✅ | ✅ | the author |
+| Samsung ML-2160 | ✅ (black and white) | not reported | no scanner | a user, with the 2.1.0 beta |
 | *your printer here* | | | | [send a printer report](../../issues/new?template=printer-report.yml) |
 
 ## Using it
@@ -400,6 +401,9 @@ Design decisions worth knowing:
 **Checked on real phones with the Canon G2020:** discovering the IPP-over-USB interfaces; printer attributes; a test page;
 streaming PDFs; printing a PDF from the phone; **manual two-sided printing** (both passes); eSCL scanning (capabilities, jobs, two
 pages back, 4.5 MB and 1.2 MB); and all of the app's screens, animations and interactions on the phone.
+
+**Reported working by a user:** printing to the Samsung ML-2160 (the 2.1.0 beta, then 2.1.0). Nothing else about that test was
+reported, so two-sided printing and print quality on it are unchecked.
 
 **Built and unit tested, used on the phone, but not yet checked on paper:** how scanned pages and saved scans look; the system
 print service; copies, pause, and the continue-after-failed-fronts option; optimize for print results; landscape and n-up layouts,
