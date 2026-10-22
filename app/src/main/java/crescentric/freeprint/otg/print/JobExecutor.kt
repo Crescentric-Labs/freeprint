@@ -16,6 +16,17 @@ object JobExecutor {
     ): JobState {
         val conn = usb.open(device) ?: return JobState.Failed("Could not open the printer.")
         try {
+            if (QpdlPrinter.matches(device)) {
+                // A host-based Samsung laser: no IPP, the page language goes straight to the USB printer port.
+                val err = QpdlPrinter.open(conn, device).use { out ->
+                    QpdlRunner.run(source, options, out, copies, sheets, rotate180, cancelled = cancelled, paused = paused, progress = progress)
+                }
+                return when (err) {
+                    null -> JobState.Done("Sent to the printer.")
+                    JobRunner.CANCELLED -> JobState.Cancelled
+                    else -> JobState.Failed(err)
+                }
+            }
             PrintSession(conn.fileDescriptor).use { session ->
                 if (!session.isOpen) return JobState.Failed("Printer connection failed: ${session.error}")
                 when (val err = JobRunner.run(source, options, session, copies, sheets, rotate180, cancelled, paused, progress)) {

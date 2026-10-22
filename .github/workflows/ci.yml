@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 # A newer push to the same pull request replaces the older run. Runs on main are never cancelled: a cancelled run is the latest

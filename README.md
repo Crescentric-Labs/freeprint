@@ -7,10 +7,10 @@
 **Print and scan from your phone over a USB cable.**<br>
 No drivers. No internet. No ads. No account. Free software.
 
-<a href="https://github.com/Crescentric-Labs/freeprint/releases/download/v2.0.5/FreePrint-2.0.5.apk"><img src="https://img.shields.io/badge/Download%20APK-v2.0.5-1E5FD8?style=for-the-badge&logo=android&logoColor=white" alt="Download the latest APK (v2.0.5)" /></a> <a href="https://github.com/Crescentric-Labs/freeprint/releases?q=prerelease%3Atrue"><img src="https://img.shields.io/badge/Download%20beta-testing-F59E0B?style=for-the-badge&logo=android&logoColor=white" alt="Download the latest beta" /></a>
+<a href="https://github.com/Crescentric-Labs/freeprint/releases/download/v2.1.0/FreePrint-2.1.0.apk"><img src="https://img.shields.io/badge/Download%20APK-v2.1.0-1E5FD8?style=for-the-badge&logo=android&logoColor=white" alt="Download the latest APK (v2.1.0)" /></a> <a href="https://github.com/Crescentric-Labs/freeprint/releases?q=prerelease%3Atrue"><img src="https://img.shields.io/badge/Download%20beta-testing-F59E0B?style=for-the-badge&logo=android&logoColor=white" alt="Download the latest beta" /></a>
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.5-brightgreen.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen.svg)](CHANGELOG.md)
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B%20(API%2026)-3DDC84.svg)](#requirements)
 [![arm64](https://img.shields.io/badge/ABI-arm64--v8a-lightgrey.svg)](#requirements)
 [![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
@@ -135,7 +135,7 @@ open the app. Android asks once whether Free Print may use the USB device; allow
 |---|---|
 | Phone | Android 8.0 (API 26) or newer, **64-bit ARM** (arm64-v8a), with USB host (OTG) support |
 | Cable | A USB OTG adapter or cable, plus the printer's own USB cable |
-| Printer | One that exposes the **IPP-over-USB** interface (USB class 7, subclass 1, protocol 4) and accepts `image/pwg-raster` at 600 dpi. Most AirPrint-capable USB printers do |
+| Printer | One that exposes the **IPP-over-USB** interface (USB class 7, subclass 1, protocol 4) and accepts `image/pwg-raster` at 600 dpi. Most AirPrint-capable USB printers do. The one exception is the **Samsung ML-2160**, which has no driverless mode: Free Print speaks its own page language, in black and white (tried on one printer so far) |
 | Scanner | The printer's scanner must answer **eSCL** over that same interface (the G2020's does) |
 
 The app's **About → Diagnostics → Interfaces** button tells you whether your printer has the interface.
@@ -196,7 +196,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | | |
 |---|---|
 | App ID | `crescentric.freeprint.otg` |
-| Version | 2.0.5 (versionCode 8); see the [changelog](CHANGELOG.md) |
+| Version | 2.1.0 (versionCode 10); see the [changelog](CHANGELOG.md) |
 | Licence | GPL-3.0 (libusb 1.0.30, LGPL-2.1+, bundled) |
 | Android | min 8.0 (API 26), target and compile 35 |
 | ABI | arm64-v8a only |
@@ -205,23 +205,23 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Permissions | **none** |
 | Dependencies | 8 libraries: AndroidX (core, activity, lifecycle, splash screen), Jetpack Compose (UI, Material 3, icons, via the Compose BOM) and kotlinx.coroutines. All Apache-2.0 |
 | Languages | English, Sinhala (274 strings and 8 plurals in each) |
-| Source | 38 Kotlin files (about 7.4k lines), 15 test classes (about 0.8k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
-| Tests | **126 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
-| History | 380+ commits, one file per commit; 8 releases, 8 tags |
+| Source | 42 Kotlin files (about 8.1k lines), 17 test classes (about 1.2k lines), C++ with libusb, build tooling in Gradle Kotlin DSL |
+| Tests | **144 unit tests** on the JVM, all passing, plus 108 encoder cases checked pixel by pixel on the host (`tools/pwg-test`) |
+| History | 450+ commits, one file per commit; 10 releases (two pre-releases), 10 tags |
 | Build | Gradle 8.10.2, AGP 8.7.3, Kotlin 2.0.21, JDK 17, NDK 27.2, CMake 3.22.1 |
 
 ## Releases and deployment
 
 | | |
 |---|---|
-| Latest release | **2.0.5** (versionCode 8), published 2026-10-19 (UTC) |
-| Releases so far | 8 (one pre-release), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
+| Latest release | **2.1.0** (versionCode 10), published 2026-10-22 (UTC) |
+| Releases so far | 10 (two pre-releases), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
 | Every release has | a signed APK, a `.sha256` checksum file, and its section of the [changelog](CHANGELOG.md) as the release notes |
 | Distribution | GitHub Releases: **live**. F-Droid: **submitted** ([docs/fdroid.md](docs/fdroid.md)). Google Play: not planned |
 | Signing | one release key, the same for every release. Certificate SHA-256: `9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f` |
 | APK signature schemes | v2 and v3 (minimum Android 8.0) |
 | Pipeline | a `vX.Y.Z` tag → [GitHub Actions](.github/workflows) builds and tests it → a signed APK and the changelog become the release. Done on a laptop today with `tools/release.sh`; Actions can take over once the signing secrets are added ([docs/releasing.md](docs/releasing.md)) |
-| Continuous integration | on every push and pull request: strings in step with the generator, 126 unit tests, a debug build and a release build, and a check that the changelog has an entry for the version. A full run takes about 10 minutes from a cold cache |
+| Continuous integration | on every push and pull request: strings in step with the generator, 144 unit tests, a debug build and a release build, and a check that the changelog has an entry for the version. A full run takes about 10 minutes from a cold cache |
 | Local release build | about a minute (`./gradlew assembleRelease`) |
 | Store listing | F-Droid metadata ready in `fastlane/`: 1 language (en-US), title, short and full description, 2 version changelogs, icon and 8 screenshots |
 | Reproducible builds | **yes** since 2.0.5: F-Droid's own build of a release matches the published APK byte for byte, so F-Droid can ship it with this project's signature (2.0.3 and 2.0.4 built identically but their signatures cannot be copied onto a rebuild) |
@@ -276,7 +276,7 @@ export PATH="$ANDROID_HOME/platform-tools:$PATH"
 git clone https://github.com/Crescentric-Labs/freeprint.git
 cd freeprint
 
-./gradlew testDebugUnitTest          # 126 unit tests, a few seconds
+./gradlew testDebugUnitTest          # 144 unit tests, a few seconds
 ./gradlew assembleDebug              # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease            # app/build/outputs/apk/release/app-release-unsigned.apk (what F-Droid builds)
 adb install -r app/build/outputs/apk/debug/app-debug.apk

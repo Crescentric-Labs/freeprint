@@ -23,6 +23,7 @@
     <string name="grant_permission">USB ප්‍රවේශයට ඉඩ දෙන්න</string>
     <string name="ready">සූදානම්</string>
     <string name="printer_mode">USB OTG • ධාවකයක් නොමැති IPP (600 DPI)</string>
+    <string name="printer_mode_spl">USB OTG • Samsung SPL, black and white</string>
     <string name="hero_title">මුද්‍රණයට සූදානම්</string>
     <string name="hero_body">ඕනෑම PDF හෝ රූපයක් තෝරා විකල්ප සකසා ඔබේ USB මුද්‍රණ යන්ත්‍රයෙන් සෘජුවම මුද්‍රණය කරන්න.</string>
     <string name="select_document">ලේඛන හෝ රූප තෝරන්න</string>

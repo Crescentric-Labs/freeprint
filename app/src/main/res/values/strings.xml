@@ -23,6 +23,7 @@
     <string name="grant_permission">Allow USB access</string>
     <string name="ready">Ready</string>
     <string name="printer_mode">USB OTG • Driverless IPP (600 DPI)</string>
+    <string name="printer_mode_spl">USB OTG • Samsung SPL, black and white</string>
     <string name="hero_title">Ready to print</string>
     <string name="hero_body">Select any PDF or image to configure options and print directly to your USB printer.</string>
     <string name="select_document">Select documents or images</string>
