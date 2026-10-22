@@ -200,7 +200,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Licence | GPL-3.0 (libusb 1.0.30, LGPL-2.1+, bundled) |
 | Android | min 8.0 (API 26), target and compile 35 |
 | ABI | arm64-v8a only |
-| Release APK | **11.9 MiB** (12,483,849 bytes for 2.0.5, signed; no minification); the debug build is about 17.6 MiB |
+| Release APK | **11.9 MiB** (12,500,233 bytes for 2.1.0, signed; no minification); the debug build is about 17.6 MiB |
 | Native code | about 750 lines of C++ of our own, plus vendored libusb |
 | Permissions | **none** |
 | Dependencies | 8 libraries: AndroidX (core, activity, lifecycle, splash screen), Jetpack Compose (UI, Material 3, icons, via the Compose BOM) and kotlinx.coroutines. All Apache-2.0 |
@@ -228,6 +228,8 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 
 | Version | versionCode | Released | APK size | SHA-256 (start) | Notes |
 |---|:-:|---|--:|---|---|
+| [2.1.0](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.1.0) | 10 | 2026-10-22 | 11.9 MiB | `6515d1c8a808…` | Samsung ML-2160 printing |
+| [2.1.0-beta.1](https://github.com/Crescentric-Labs/freeprint/releases/tag/beta-2.1.0-beta.1) | 9 | 2026-10-21 | 11.9 MiB | `aacb5b8d8ba6…` | beta of the Samsung ML-2160 printing (pre-release) |
 | [2.0.5](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.5) | 8 | 2026-10-19 | 11.9 MiB | `61122876d897…` | release APKs verifiable by F-Droid |
 | [2.0.4](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.4) | 7 | 2026-10-19 | 11.9 MiB | `e7567fc1e220…` | no version-control info in the APK |
 | [2.0.3](https://github.com/Crescentric-Labs/freeprint/releases/tag/v2.0.3) | 6 | 2026-10-19 | 11.9 MiB | `d8d1c85b3754…` | reproducible builds |
