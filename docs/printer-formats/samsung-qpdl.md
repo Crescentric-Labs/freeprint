@@ -7,6 +7,9 @@ device's input format. It contains no program code. Numbers are decimal unless w
 Items marked **(verify)** are believed correct but must be confirmed against a real printer or
 against reference output before being trusted.
 
+Status: a first encoder written from this description printed correctly on a real ML-2160 in beta 1 (2.1.0-beta.1), so the
+basic path described here is confirmed; the individual (verify) items were not each tested.
+
 ## 1. Transport
 
 - The printer exposes USB class 7, subclass 1, protocol 2 (a plain bidirectional printer port): one
