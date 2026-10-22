@@ -1,19 +1,21 @@
 name: Beta
 
-# Every push to develop is built and tested. When the version in app/build.gradle.kts is a beta (for example 2.1.0-beta.1) and
+# Every push to develop, and every pushed tag named beta-*, is built and tested. When the version in app/build.gradle.kts is a beta (for example 2.1.0-beta.1) and
 # that beta has not been published yet, the APK is signed with the release key and published as a GitHub pre-release tagged
 # beta-<version>. Betas are never "latest", so the normal download button and F-Droid are not affected. To publish a new beta,
 # raise the beta number (and versionCode if needed) and add a matching "## [2.1.0-beta.2]" section to CHANGELOG.md.
 on:
   push:
     branches: [develop]
+    tags: ["beta-*"]
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# One beta build at a time, so a branch push and a tag push of the same beta cannot both try to publish it
 concurrency:
-  group: beta-${{ github.sha }}
+  group: beta
   cancel-in-progress: false
 
 jobs:
@@ -32,6 +34,10 @@ jobs:
           version="$(sed -n 's/.*versionName = "\(.*\)"/\1/p' app/build.gradle.kts)"
           echo "VERSION=$version" >> "$GITHUB_ENV"
           echo "TAG=beta-$version" >> "$GITHUB_ENV"
+          # A pushed tag must be the one for this version, or the release would not match what was built
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "beta-$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} but versionName is $version (expected beta-$version)"; exit 1
+          fi
           case "$version" in
             *-beta.*) echo "beta=true" >> "$GITHUB_OUTPUT" ;;
             *) echo "beta=false" >> "$GITHUB_OUTPUT"; echo "::notice::versionName $version is not a beta, so nothing will be published." ;;
