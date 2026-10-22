@@ -89,11 +89,13 @@ them; they were published with `tools/release.sh`.
 
 - `main` is what has been released. `develop` is where finished features meet before a release. Work happens on
   `feature/<name>` branches, which are merged into `develop`.
-- Every push to `develop` runs the **Beta** workflow (`.github/workflows/beta.yml`): tests, a release build and, if
-  `versionName` is a beta such as `2.1.0-beta.1` that has not been published yet, a signed APK published as a GitHub
-  **pre-release** tagged `beta-2.1.0-beta.1`. Betas are never "latest", so the normal download button is not affected.
-- To publish another beta: raise the beta number in `app/build.gradle.kts`, add a `## [2.1.0-beta.2] - date` section to
-  `CHANGELOG.md`, merge into `develop`. Published releases cannot be changed, so a new beta always needs a new number.
+- Pushing a tag named `beta-<version>` on a commit of `develop` runs the **Beta** workflow (`.github/workflows/beta.yml`): tests,
+  a release build and, if `versionName` is that beta (for example `2.2.0-beta.2`), a signed APK published as a GitHub
+  **pre-release** tagged `beta-2.2.0-beta.2`. Betas are never "latest", so the normal download button is not affected. Ordinary
+  pushes to `develop` are only checked by CI.
+- To publish another beta: raise the beta number in `app/build.gradle.kts`, add a `## [2.2.0-beta.2] - date` section to
+  `CHANGELOG.md`, merge into `develop`, then `git tag beta-2.2.0-beta.2 && git push origin beta-2.2.0-beta.2`. Published releases
+  cannot be changed, so a new beta always needs a new number.
 - To ship: on `develop` set the plain version (`2.1.0`), move the changelog entries under it, merge `develop` into `main`, then
   tag `v2.1.0` as usual.
 
