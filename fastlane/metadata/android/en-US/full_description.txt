@@ -23,6 +23,6 @@ Free Print lets you print and scan with a USB printer plugged straight into your
 • English and Sinhala, with a language switch inside the app
 
 <b>Requirements</b>
-A phone with USB host (OTG) support running Android 8 or newer on a 64-bit ARM processor (arm64-v8a; phones that run 32-bit ARM only cannot install it), an OTG adapter, and a printer that exposes the standard IPP-over-USB interface (most printers sold in the last decade), or a Samsung ML-2160 (black and white only). Tested with a Canon PIXMA G2020 on several phones; other printers are expected to work but have not all been tried.
+A phone with USB host (OTG) support running Android 8 or newer on a 64-bit ARM processor (arm64-v8a; phones that run 32-bit ARM only cannot install it), an OTG adapter, and a printer that exposes the standard IPP-over-USB interface (most printers sold in the last decade), or a Samsung ML-2160 (black and white only). Tested with a Canon PIXMA G2020 on several phones, and a user confirmed the Samsung ML-2160; other printers are expected to work but have not all been tried.
 
 Free software under the GNU General Public License v3.0. Built with Kotlin, Jetpack Compose and libusb.
