@@ -453,7 +453,7 @@ private fun PrinterStatusCard(
                                 ReadyBadge()
                             }
                             Text(
-                                stringResource(if (vm.hostBased) R.string.printer_mode_spl else R.string.printer_mode),
+                                stringResource(vm.hostLabel ?: R.string.printer_mode),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
