@@ -1,13 +1,13 @@
 name: Beta
 
-# Pushing a tag named beta-<version> (for example beta-2.2.0-beta.2, on a commit of develop) builds and tests that commit and,
+# Pushing a tag named v<version> for a beta (for example v2.2.0-beta.2, on a commit of develop) builds and tests that commit and,
 # if the version in app/build.gradle.kts is that beta, signs the APK with the release key and publishes it as a GitHub
 # pre-release. Betas are never "latest", so the normal download button and F-Droid are not affected. Ordinary pushes to
 # develop are only checked by the CI workflow. It can also be started by hand from the Actions tab. Either way the commit must
 # be on the develop branch; anything else stops at the first step.
 on:
   push:
-    tags: ["beta-*"]
+    tags: ["v*-beta.*"]
   workflow_dispatch:
 
 permissions:
@@ -43,10 +43,10 @@ jobs:
         run: |
           version="$(sed -n 's/.*versionName = "\(.*\)"/\1/p' app/build.gradle.kts)"
           echo "VERSION=$version" >> "$GITHUB_ENV"
-          echo "TAG=beta-$version" >> "$GITHUB_ENV"
+          echo "TAG=v$version" >> "$GITHUB_ENV"
           # A pushed tag must be the one for this version, or the release would not match what was built
-          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "beta-$version" ]; then
-            echo "::error::tag ${GITHUB_REF_NAME} but versionName is $version (expected beta-$version)"; exit 1
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} but versionName is $version (expected v$version)"; exit 1
           fi
           case "$version" in
             *-beta.*) echo "beta=true" >> "$GITHUB_OUTPUT" ;;
