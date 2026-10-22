@@ -71,8 +71,8 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
     private var device: UsbDevice? = null
 
     var printerName by mutableStateOf<String?>(null); private set
-    /** True for a printer without IPP that is driven with its own page language (beta). */
-    var hostBased by mutableStateOf(false); private set
+    /** The "USB OTG • ..." line to show for a printer without IPP that is driven with its own page language (beta); null for a normal printer. */
+    @get:StringRes var hostLabel by mutableStateOf<Int?>(null); private set
     var hasPermission by mutableStateOf(false); private set
 
     /** The chosen files, in print order. PDFs and images can be mixed. */
@@ -197,7 +197,13 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refreshPrinter() {
         device = usb.findPrinter()
-        hostBased = device?.let { crescentric.freeprint.otg.print.QpdlPrinter.matches(it) } == true
+        hostLabel = device?.let {
+            when {
+                crescentric.freeprint.otg.print.QpdlPrinter.matches(it) -> R.string.printer_mode_spl
+                crescentric.freeprint.otg.print.CaptPrinter.matches(it) -> R.string.printer_mode_capt
+                else -> null
+            }
+        }
         printerName = device?.let { listOfNotNull(it.manufacturerName, it.productName).joinToString(" ").ifBlank { "USB printer" } }
         hasPermission = device?.let { usb.hasPermission(it) } ?: false
     }

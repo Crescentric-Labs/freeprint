@@ -16,6 +16,17 @@ object JobExecutor {
     ): JobState {
         val conn = usb.open(device) ?: return JobState.Failed("Could not open the printer.")
         try {
+            if (CaptPrinter.matches(device)) {
+                // A host-based Canon laser: the CAPT language goes straight to the USB printer port.
+                val err = CaptPrinter.open(conn, device).use { link ->
+                    CaptRunner.run(source, options, link, copies, sheets, rotate180, cancelled = cancelled, paused = paused, progress = progress)
+                }
+                return when (err) {
+                    null -> JobState.Done("Sent to the printer.")
+                    JobRunner.CANCELLED -> JobState.Cancelled
+                    else -> JobState.Failed(err)
+                }
+            }
             if (QpdlPrinter.matches(device)) {
                 // A host-based Samsung laser: no IPP, the page language goes straight to the USB printer port.
                 val err = QpdlPrinter.open(conn, device).use { out ->

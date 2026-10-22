@@ -9,6 +9,9 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+### Added
+- Beta: printing to Canon LBP6000-series laser printers (LBP6000, 6018, 6020, 6030) that print only through Canon's own CAPT language, in black and white. Not yet tried on a real printer.
+
 ## [2.1.0] - 2026-10-22
 
 ### Added

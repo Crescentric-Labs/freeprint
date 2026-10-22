@@ -437,4 +437,6 @@ notice and the full texts.
 It bundles [libusb](https://libusb.info) 1.0.30 as source under `app/src/main/cpp/third_party/libusb/`, licensed under the
 LGPL 2.1 or later (its `COPYING` is alongside), which is compatible with distributing the combined app under the GPL v3.
 
+The Canon CAPT printing is a port of parts of [captdriver](https://github.com/mounaiban/captdriver) (GPL-3.0-or-later, by Alexey Galakhov and others).
+
 Built with Kotlin, Jetpack Compose and Material 3. Developed by [Crescentric](https://github.com/Crescentric-Labs).
