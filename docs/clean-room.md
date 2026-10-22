@@ -18,3 +18,12 @@ shown to have no memory of existing drivers. Anyone who doubts the result should
 
 Reverse engineering for interoperability (making a device work with software it was not made for) is widely allowed, but the law
 differs by country; this note is a record of the method, not legal advice.
+
+## Canon CAPT printers: a different case
+
+The Canon LBP6000-series support (`print/Capt*.kt`) was **not** written clean-room. It is a Kotlin port of parts of
+[captdriver](https://github.com/mounaiban/captdriver) (`capt-command.c`, `capt-status.c`, `generic-ops.c`, `paper.c`,
+`prn_lbp2900.c`, `hiscoa-compress.c`, `hiscoa-common.c`), which is licensed GPL-3.0-or-later, so it can be used in Free Print
+(GPL-3.0-only) as long as it is credited and stays under the GPL. Every ported file says so in its header and keeps the original
+copyright holders (Alexey Galakhov, Alexei Gordeev). The protocol was reverse engineered by Nicolas Boichat, Benoit Bolsee and
+Alexey Galakhov. The compressor's test uses a decoder ported from captdriver's own test suite.
