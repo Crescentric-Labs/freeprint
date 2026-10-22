@@ -4,6 +4,16 @@ This is the checklist and the notes for getting Free Print into the [F-Droid](ht
 keeping it there. F-Droid builds the app **from source** on its own servers and signs it with its own key, so nothing here is
 uploaded: the work is making sure the source builds cleanly and describing the app.
 
+## Status
+
+The first request ([merge request 53306](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/53306), opened 2026-10-19) was
+**closed by an F-Droid maintainer on 2026-10-20**: the [inclusion policy](https://f-droid.org/docs/Inclusion_Policy) wants an app
+to have been actively developed for at least three months, unless it already has some users, its author maintains other apps on
+F-Droid, or it is made for an event. Free Print's first commit was on 2026-10-11, so three months are over around 2027-01-11. The
+maintainer invited reopening the request once the criteria are met. Until then keep releasing as usual; everything below stays
+valid. When reopening, refresh the metadata first (current version and full commit hash) and give `UpdateCheckMode` a tag pattern
+so that beta tags are ignored: `UpdateCheckMode: Tags ^v[0-9.]+$` (checked with `fdroid lint` and `fdroid rewritemeta`).
+
 ## What the project already does for F-Droid
 
 | F-Droid expects | State |

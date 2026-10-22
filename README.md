@@ -15,7 +15,7 @@ No drivers. No internet. No ads. No account. Free software.
 [![arm64](https://img.shields.io/badge/ABI-arm64--v8a-lightgrey.svg)](#requirements)
 [![Permissions: none](https://img.shields.io/badge/permissions-none-success.svg)](#privacy)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-7F52FF.svg)](#how-it-works)
-[![Get it on F-Droid](https://img.shields.io/badge/F--Droid-submitted-orange.svg)](docs/fdroid.md)
+[![Get it on F-Droid](https://img.shields.io/badge/F--Droid-not%20yet-lightgrey.svg)](docs/fdroid.md)
 [![CI](https://github.com/Crescentric-Labs/freeprint/actions/workflows/ci.yml/badge.svg)](https://github.com/Crescentric-Labs/freeprint/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/Crescentric-Labs/freeprint?label=release)](https://github.com/Crescentric-Labs/freeprint/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Crescentric-Labs/freeprint/total)](https://github.com/Crescentric-Labs/freeprint/releases)
@@ -122,7 +122,7 @@ per-model driver to write.
 
 | Source | Status |
 |---|---|
-| **F-Droid** | Submitted: the [inclusion merge request](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/53306) is open and under review ([docs/fdroid.md](docs/fdroid.md)). Not listed yet |
+| **F-Droid** | Not listed yet. F-Droid asks for an app to have been developed for at least three months; the [first request](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/53306) was closed on 2026-10-20 for that reason and can be reopened from mid-January 2027 ([docs/fdroid.md](docs/fdroid.md)) |
 | **GitHub Releases** | Signed APKs will be attached to each tagged release |
 | **Build it yourself** | See [Developer setup](#developer-setup) |
 
@@ -218,7 +218,7 @@ Report security problems privately: see [SECURITY.md](SECURITY.md).
 | Latest release | **2.1.0** (versionCode 10), published 2026-10-22 (UTC) |
 | Releases so far | 10 (two pre-releases), all on [GitHub Releases](https://github.com/Crescentric-Labs/freeprint/releases) |
 | Every release has | a signed APK, a `.sha256` checksum file, and its section of the [changelog](CHANGELOG.md) as the release notes |
-| Distribution | GitHub Releases: **live**. F-Droid: **submitted** ([docs/fdroid.md](docs/fdroid.md)). Google Play: not planned |
+| Distribution | GitHub Releases: **live**. F-Droid: **not yet**, to be requested again from mid-January 2027 ([docs/fdroid.md](docs/fdroid.md)). Google Play: not planned |
 | Signing | one release key, the same for every release. Certificate SHA-256: `9df7c9acd30f81b3b0ab139163c33e99c6bd4a549a3c6bc17dede7c4bd0f937f` |
 | APK signature schemes | v2 and v3 (minimum Android 8.0) |
 | Pipeline | a `vX.Y.Z` tag → [GitHub Actions](.github/workflows) builds and tests it → a signed APK and the changelog become the release. Done on a laptop today with `tools/release.sh`; Actions can take over once the signing secrets are added ([docs/releasing.md](docs/releasing.md)) |
