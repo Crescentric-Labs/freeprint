@@ -15,7 +15,7 @@ object CaptRunner {
 
     /** Same contract as [JobRunner.run]: null on success, [JobRunner.CANCELLED], or a short error message with the end of the trace. */
     fun run(
-        source: PageSource, options: PrintOptions, link: CaptTransport, copies: Int = 1,
+        source: PageSource, options: PrintOptions, link: CaptTransport, copies: Int = 1, info: String = "",
         sheets: List<Int>? = null, rotate180: Boolean = false,
         cancelled: () -> Boolean = { false }, paused: () -> Boolean = { false }, progress: (Int, Int) -> Unit = { _, _ -> },
     ): String? {
@@ -63,7 +63,7 @@ object CaptRunner {
                         if (cancelled()) { session.cancelCleanup(); return JobRunner.CANCELLED }
                         session.sendBand(b)
                     }
-                    if (!session.pageEpilogue()) return withTrace("The printer is out of paper.", session)
+                    if (!session.pageEpilogue()) return withTrace("The printer is out of paper.", session, info)
                 }
                 session.jobEpilogue()
                 inJob = false
@@ -74,15 +74,15 @@ object CaptRunner {
             return JobRunner.CANCELLED
         } catch (e: java.io.IOException) {
             if (inJob) session.cancelCleanup()
-            return withTrace(e.message ?: "Sending to the printer failed.", session)
+            return withTrace(e.message ?: "Sending to the printer failed.", session, info)
         } finally {
             bitmap.recycle()
             turned?.recycle()
         }
     }
 
-    private fun withTrace(message: String, session: CaptSession) =
-        message + "\nCanon CAPT (beta) trace:\n" + session.trace.takeLast(8).joinToString("\n")
+    private fun withTrace(message: String, session: CaptSession, info: String = "") =
+        message + "\nCanon CAPT (beta) trace:\n" + (if (info.isNotEmpty()) info + "\n" else "") + session.trace.takeLast(8).joinToString("\n")
 
     /** The page header for [paper], as captdriver builds it for this family: bytes per line are the paper width in points. */
     fun geometryOf(paper: Paper): CaptSession.Page = CaptSession.Page(

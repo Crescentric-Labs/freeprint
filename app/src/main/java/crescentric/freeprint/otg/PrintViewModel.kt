@@ -587,7 +587,13 @@ class PrintViewModel(app: Application) : AndroidViewModel(app) {
 
     // ---- diagnostics (spike tools kept for troubleshooting) ----
 
-    fun describePrinter() { diagnostics += (device?.let { usb.describe(it) } ?: "No USB printer found.") + "\n" }
+    fun describePrinter() {
+        val d = device
+        if (d == null) { diagnostics += "No USB printer found.\n"; return }
+        diagnostics += usb.describe(d) + "\n"
+        // The device ID names the page language the printer speaks, which decides whether Free Print can drive it
+        if (usb.hasPermission(d)) Thread { val id = usb.deviceId(d); diagnostics += "IEEE 1284 device ID: ${id ?: "(no answer)"}\n" }.start()
+    }
     fun clearDiagnostics() { diagnostics = "" }
 
     fun printerAttributes() = withPrinter { NativeIpp.getPrinterAttributes(it) }
