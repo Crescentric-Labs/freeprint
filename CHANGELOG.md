@@ -9,6 +9,11 @@ the people who use the app. Put new work under `## [Unreleased]` and move it int
 
 ## [Unreleased]
 
+## [2.2.0-beta.2] - 2026-10-24
+
+### Changed
+- Beta: the Canon printing now asks the printer for its identity first and shows it, together with where the conversation stopped, if printing fails. About, Diagnostics, USB interfaces also shows it. This is to find out why the LBP6030 did not answer.
+
 ## [2.2.0-beta.1] - 2026-10-23
 
 ### Added
