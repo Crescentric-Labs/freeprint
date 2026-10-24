@@ -19,7 +19,7 @@ object JobExecutor {
             if (CaptPrinter.matches(device)) {
                 // A host-based Canon laser: the CAPT language goes straight to the USB printer port.
                 val err = CaptPrinter.open(conn, device).use { link ->
-                    CaptRunner.run(source, options, link, copies, sheets, rotate180, cancelled = cancelled, paused = paused, progress = progress)
+                    CaptRunner.run(source, options, link, copies, link.info, sheets, rotate180, cancelled = cancelled, paused = paused, progress = progress)
                 }
                 return when (err) {
                     null -> JobState.Done("Sent to the printer.")
