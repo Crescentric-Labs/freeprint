@@ -5,6 +5,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
+import crescentric.freeprint.otg.UsbPrinter
 
 /**
  * Canon LBP laser printers that take Canon's CAPT language over a plain two-way USB printer port, with no IPP-over-USB.
@@ -39,11 +40,25 @@ object CaptPrinter {
     fun open(connection: UsbDeviceConnection, device: UsbDevice): CaptLink {
         val port = portOf(device) ?: throw CaptException("This printer has no usable USB printer port.")
         if (!connection.claimInterface(port.itf, true)) throw CaptException("Could not claim the printer's USB interface.")
-        return CaptLink(connection, port)
+        // What captdriver does first: ask for the device ID. It names the CAPT version, or shows that this is not a CAPT printer.
+        val id = runCatching { UsbPrinter.readDeviceId(connection, port.itf) }.getOrNull()
+        val link = CaptLink(connection, port, "Device ID: ${id ?: "(no answer)"}; interface ${port.itf.id} proto ${port.itf.interfaceProtocol}")
+        link.drain()
+        return link
     }
 }
 
-class CaptLink(private val connection: UsbDeviceConnection, private val port: CaptPrinter.Port) : CaptTransport, AutoCloseable {
+class CaptLink(
+    private val connection: UsbDeviceConnection, private val port: CaptPrinter.Port,
+    /** What was learned about the printer on opening it, for the error message. */
+    val info: String = "",
+) : CaptTransport, AutoCloseable {
+    /** Throws away anything the printer left waiting to be read. */
+    fun drain() {
+        val junk = ByteArray(512)
+        repeat(8) { if (connection.bulkTransfer(port.input, junk, junk.size, 200) <= 0) return }
+    }
+
     override fun write(data: ByteArray, off: Int, len: Int) {
         var sent = 0
         while (sent < len) {
