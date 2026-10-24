@@ -13,8 +13,8 @@ android {
         applicationId = "crescentric.freeprint.otg"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "2.2.0-beta.1"
+        versionCode = 12
+        versionName = "2.2.0-beta.2"
 
         ndk { abiFilters += "arm64-v8a" }
     }
