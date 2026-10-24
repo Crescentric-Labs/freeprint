@@ -55,6 +55,21 @@ class UsbPrinter(private val context: Context) {
 
     fun open(device: UsbDevice): UsbDeviceConnection? = manager.openDevice(device)
 
+    /**
+     * The IEEE 1284 device ID of the first printer-class interface (a string such as `MFG:Canon;CMD:CAPT;MDL:LBP6030;`), or null
+     * when the printer does not answer. It tells which page language the printer speaks. Needs USB permission.
+     */
+    fun deviceId(device: UsbDevice): String? {
+        val conn = open(device) ?: return null
+        try {
+            val itf = (0 until device.interfaceCount).map { device.getInterface(it) }
+                .firstOrNull { it.interfaceClass == UsbConstants.USB_CLASS_PRINTER } ?: return null
+            return readDeviceId(conn, itf)
+        } finally {
+            conn.close()
+        }
+    }
+
     /** Human-readable dump of every interface and endpoint as Android reports them. */
     fun describe(device: UsbDevice): String = buildString {
         appendLine("${device.manufacturerName} ${device.productName}  VID 0x%04x PID 0x%04x".format(device.vendorId, device.productId))
@@ -74,6 +89,16 @@ class UsbPrinter(private val context: Context) {
     }
 
     companion object {
+        /** GET_DEVICE_ID, a class request on an interface; the reply is a big-endian length followed by the ASCII string. */
+        fun readDeviceId(conn: UsbDeviceConnection, itf: android.hardware.usb.UsbInterface): String? {
+            val buf = ByteArray(1024)
+            val n = conn.controlTransfer(0xA1, 0, 0, (itf.id shl 8) or itf.alternateSetting, buf, buf.size, 3000)
+            if (n < 2) return null
+            val declared = ((buf[0].toInt() and 0xFF) shl 8) or (buf[1].toInt() and 0xFF)
+            val end = if (declared in 2..n) declared else n
+            return String(buf, 2, end - 2, Charsets.ISO_8859_1).trim().ifEmpty { null }
+        }
+
         const val ACTION_PERMISSION = "crescentric.freeprint.otg.USB_PERMISSION"
     }
 }
